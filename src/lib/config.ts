@@ -1,0 +1,2 @@
+export const REFRESH_INTERVAL_MS = 10_000
+export const SCREEN_WIPER_DURATION_MS = 1000
