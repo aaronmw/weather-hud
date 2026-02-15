@@ -32,6 +32,10 @@ function num(s: string | undefined): number | null {
   return isNaN(n) ? null : n;
 }
 
+function roundTemp(n: number | null): number | null {
+  return n != null ? Math.round(n) : null;
+}
+
 function extractText(obj: unknown): string {
   if (obj == null) return '';
   if (typeof obj === 'string' || typeof obj === 'number') return String(obj);
@@ -43,17 +47,41 @@ function extractText(obj: unknown): string {
   return '';
 }
 
-export async function fetchCanmoreWeather(): Promise<WeatherData> {
-  const hour = new Date().getUTCHours().toString().padStart(2, '0');
-  const dirRes = await fetch(`${EC_BASE}/${hour}/`, { next: { revalidate: 3600 } });
-  const dirHtml = await dirRes.text();
-  const fileMatch = dirHtml.match(
-    new RegExp(`(\\d{8}T\\d{6}\\.\\d+Z_MSC_CitypageWeather_${CANMORE_SITE_CODE}_en\\.xml)`)
-  );
-  const filename = fileMatch?.[1];
-  if (!filename) throw new Error('Canmore weather file not found');
+const CANMORE_REGEX = new RegExp(
+  `(\\d{8}T\\d{6}\\.\\d+Z_MSC_CitypageWeather_${CANMORE_SITE_CODE}_en\\.xml)`
+);
 
-  const xmlRes = await fetch(`${EC_BASE}/${hour}/${filename}`, { next: { revalidate: 3600 } });
+const ICON_CODE_DESCRIPTIONS: Record<string, string> = {
+  '00': 'Sunny', '01': 'A few clouds', '02': 'A mix of sun and cloud', '03': 'Cloudy periods',
+  '04': 'Increasing cloudiness', '05': 'Clearing', '06': 'Chance of showers', '07': 'Chance of flurries or rain showers',
+  '08': 'A few flurries', '09': 'Chance of thunderstorms', '10': 'Cloudy', '11': 'Overcast',
+  '12': 'Showers', '13': 'Periods of rain', '14': 'Chance of freezing rain', '15': 'Rain or snow',
+  '16': 'Flurries', '17': 'Periods of snow', '18': 'Snow', '19': 'Blizzard',
+  '20': 'Fog', '21': 'Fog patches', '22': 'Smoke', '23': 'Dust',
+  '24': 'Blowing snow', '25': 'Ice pellets', '26': 'Freezing drizzle', '27': 'Freezing rain',
+  '28': 'Rain', '29': 'Drizzle', '30': 'Windy', '31': 'Clear', '32': 'Partly cloudy',
+  '33': 'Cloudy', '34': 'Cloudy', '35': 'Cloudy', '36': 'Cloudy', '37': 'Cloudy', '38': 'Cloudy', '39': 'Chance of thunderstorms',
+  '40': 'Thunderstorms', '41': 'Thunderstorms', '42': 'Thunderstorms', '43': 'Thunderstorms', '44': 'Thunderstorms',
+  '45': 'Thunderstorms', '46': 'Thunderstorms', '47': 'Chance of thunderstorms',
+};
+
+export async function fetchCanmoreWeather(): Promise<WeatherData> {
+  let hour = new Date().getUTCHours();
+  let filename: string | undefined;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const h = hour.toString().padStart(2, '0');
+    const dirRes = await fetch(`${EC_BASE}/${h}/`, { next: { revalidate: 3600 } });
+    const dirHtml = await dirRes.text();
+    filename = dirHtml.match(CANMORE_REGEX)?.[1];
+    if (filename) break;
+    hour = (hour - 1 + 24) % 24;
+  }
+
+  if (!filename) throw new Error('Canmore weather file not found');
+  const h = hour.toString().padStart(2, '0');
+
+  const xmlRes = await fetch(`${EC_BASE}/${h}/${filename}`, { next: { revalidate: 3600 } });
   const xml = await xmlRes.text();
   const parser = new XMLParser({ ignoreAttributes: false });
   const doc = parser.parse(xml) as Record<string, unknown>;
@@ -65,11 +93,12 @@ export async function fetchCanmoreWeather(): Promise<WeatherData> {
     (siteData?.location as Record<string, unknown>)?.name
   ) || 'Canmore';
   const current = siteData?.currentConditions as Record<string, unknown> | undefined;
+  const currentCondition = extractText(current?.condition);
   const forecastGroup = siteData?.forecastGroup as Record<string, unknown> | undefined;
   const forecasts = forecastGroup?.forecast;
   const forecastList = Array.isArray(forecasts) ? forecasts : forecasts ? [forecasts] : [];
 
-  const currentTemp = num(extractText(current?.temperature)) ?? 0;
+  const currentTemp = roundTemp(num(extractText(current?.temperature))) ?? 0;
   const windObj = current?.wind as Record<string, unknown> | undefined;
   const windSpeed = num(extractText(windObj?.speed)) ?? 0;
   const windGustRaw = extractText(windObj?.gust);
@@ -88,15 +117,17 @@ export async function fetchCanmoreWeather(): Promise<WeatherData> {
     const period = extractText(periodObj);
     const textForecastName = periodObj?.['@_textForecastName'] ?? '';
     const abbrev = f?.abbreviatedForecast as Record<string, unknown> | undefined;
+    const cloudPrecip = f?.cloudPrecip as Record<string, unknown> | undefined;
     const icon = extractText(abbrev?.iconCode);
     const textSummary = extractText(abbrev?.textSummary);
+    const cloudPrecipSummary = extractText(cloudPrecip?.textSummary);
     const temps = f?.temperatures as Record<string, unknown> | undefined;
     const tempList = temps?.temperature;
     const tempArr = Array.isArray(tempList) ? tempList : tempList ? [tempList] : [];
     const highTemp = tempArr.find((t: Record<string, unknown>) => (t as Record<string, string>)['@_class'] === 'high');
     const lowTemp = tempArr.find((t: Record<string, unknown>) => (t as Record<string, string>)['@_class'] === 'low');
-    const high = highTemp ? num(extractText(highTemp)) : null;
-    const low = lowTemp ? num(extractText(lowTemp)) : null;
+    const high = highTemp ? roundTemp(num(extractText(highTemp))) : null;
+    const low = lowTemp ? roundTemp(num(extractText(lowTemp))) : null;
     const popObj = abbrev?.pop;
     const pop = num(extractText(popObj));
     const uv = f?.uv as Record<string, unknown> | undefined;
@@ -105,8 +136,13 @@ export async function fetchCanmoreWeather(): Promise<WeatherData> {
     if (textForecastName === 'Today') {
       todayHigh = high ?? currentTemp;
       uvIndexTodayHigh = uvIndex;
-      condition = textSummary;
       iconCode = icon ? String(icon).padStart(2, '0') : '02';
+      condition =
+        textSummary ||
+        cloudPrecipSummary ||
+        currentCondition ||
+        ICON_CODE_DESCRIPTIONS[iconCode] ||
+        ICON_CODE_DESCRIPTIONS['02'];
     }
     if (textForecastName === 'Tonight') {
       todayLow = low ?? currentTemp;
@@ -119,11 +155,11 @@ export async function fetchCanmoreWeather(): Promise<WeatherData> {
       const nextTempList = nextTemps?.temperature;
       const nextTempArr = Array.isArray(nextTempList) ? nextTempList : nextTempList ? [nextTempList] : [];
       const nextLow = nextTempArr.find((t: Record<string, unknown>) => (t as Record<string, string>)['@_class'] === 'low');
-      const nightLow = nextLow ? num(extractText(nextLow)) : null;
+      const nightLow = nextLow ? roundTemp(num(extractText(nextLow))) : null;
 
       dayForecasts.push({
         period: textForecastName || period,
-        condition: textSummary,
+        condition: textSummary || cloudPrecipSummary || ICON_CODE_DESCRIPTIONS[icon ? String(icon).padStart(2, '0') : '00'] || '',
         iconCode: icon ? String(icon).padStart(2, '0') : '00',
         high,
         low: nightLow,
@@ -132,9 +168,20 @@ export async function fetchCanmoreWeather(): Promise<WeatherData> {
     }
   }
 
+  if (!condition && dayForecasts.length > 0) {
+    const first = dayForecasts[0];
+    iconCode = first.iconCode;
+    condition =
+      first.condition ||
+      currentCondition ||
+      ICON_CODE_DESCRIPTIONS[iconCode] ||
+      ICON_CODE_DESCRIPTIONS['02'];
+    if (todayHigh === 0) todayHigh = first.high ?? currentTemp;
+  }
+
   return {
     location: `${location}, AB`,
-    condition: condition || '—',
+    condition: condition || ICON_CODE_DESCRIPTIONS[iconCode] || '—',
     iconCode: iconCode || '00',
     currentTemp,
     todayHigh,
