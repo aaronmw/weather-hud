@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #ffe9a4;
+  --foreground: #0a1636;
   --screen-wiper-beam-width: 25vw;
 }
 
@@ -14,15 +14,15 @@
 }
 
 html {
-  font-size: 2vh;
-  margin: 0;
-  overflow: hidden;
+  @apply text-[2vh];
+  @apply m-0;
+  @apply overflow-hidden;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0a1636; /* deep dark blue */
+    --foreground: #ffe9a4; /* pale gold */
   }
 }
 
@@ -38,14 +38,23 @@ body {
   @apply opacity-50;
 }
 
+@utility unit {
+  @apply label;
+  @apply pl-[0.5em];
+}
+
 @utility value {
-  @apply font-mono;
   @apply font-bold;
 }
 
-@utility unit {
-  @apply opacity-50;
-  @apply pl-[0.25em];
+@utility primary-value {
+  @apply value;
+  @apply text-[12vh];
+  @apply font-thin;
+}
+
+@utility secondary-value {
+  @apply primary-value;
 }
 
 @keyframes screen-wiper-sweep {
