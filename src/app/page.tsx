@@ -229,10 +229,10 @@ export default function Home() {
         >
           <ol
             className={twJoin(
-              'divide-foreground/10',
+              'divide-foreground/35',
               'flex flex-col justify-stretch',
               'h-full w-full',
-              'divide-x',
+              'divide-x divide-y',
             )}
           >
             {data.sevenDayForecast.map(day => {
