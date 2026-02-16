@@ -12,6 +12,12 @@
   --color-foreground: var(--foreground);
 }
 
+@utility inverted {
+  background-color: var(--foreground);
+  color: var(--background);
+  border-color: color-mix(in srgb, var(--background) 35%, transparent) !important;
+}
+
 @utility font-body {
   font-family: var(--font-body);
 }
@@ -60,8 +66,8 @@ body {
 
 @utility primary-value {
   @apply font-numerals;
-  @apply text-[8rem];
-  @apply font-thin;
+  @apply text-[6rem];
+  @apply font-normal;
   @apply leading-[1em];
 }
 
@@ -75,6 +81,97 @@ body {
 @utility tertiary-value {
   @apply font-numerals;
   @apply font-bold;
+}
+
+@utility label-large {
+  @apply text-[1.5rem];
+  @apply font-black;
+  @apply leading-[1em];
+  @apply uppercase;
+}
+
+@utility weather-grid {
+  display: grid;
+  grid-template-columns: min-content 1.5fr 2fr 1fr 1.5fr;
+  grid-template-rows: auto 1fr 1fr 1fr 1fr;
+  grid-template-areas:
+    'labels-header condition-header wind-header uv-header forecast-header'
+    'labels-current condition wind uv forecast'
+    'labels-current condition-current wind-current uv-current forecast'
+    'labels-high condition-high wind-high uv-high forecast'
+    'labels-low condition-low wind-low uv-low forecast';
+}
+
+@utility ga-labels-header {
+  grid-area: labels-header;
+}
+@utility ga-condition-header {
+  grid-area: condition-header;
+}
+@utility ga-wind-header {
+  grid-area: wind-header;
+}
+@utility ga-uv-header {
+  grid-area: uv-header;
+}
+@utility ga-forecast-header {
+  grid-area: forecast-header;
+}
+@utility ga-labels-current {
+  grid-area: labels-current;
+}
+@utility ga-labels-high {
+  grid-area: labels-high;
+}
+@utility ga-labels-low {
+  grid-area: labels-low;
+}
+
+@utility vertical-label {
+  @apply label-large;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+}
+
+@utility ga-condition {
+  grid-area: condition;
+}
+@utility ga-condition-current {
+  grid-area: condition-current;
+}
+@utility ga-condition-high {
+  grid-area: condition-high;
+}
+@utility ga-condition-low {
+  grid-area: condition-low;
+}
+@utility ga-wind {
+  grid-area: wind;
+}
+@utility ga-wind-current {
+  grid-area: wind-current;
+}
+@utility ga-wind-high {
+  grid-area: wind-high;
+}
+@utility ga-wind-low {
+  grid-area: wind-low;
+}
+@utility ga-uv {
+  grid-area: uv;
+}
+@utility ga-uv-current {
+  grid-area: uv-current;
+}
+@utility ga-uv-high {
+  grid-area: uv-high;
+}
+@utility ga-uv-low {
+  grid-area: uv-low;
+}
+@utility ga-forecast {
+  grid-area: forecast;
 }
 
 @keyframes burn-in-orbit {

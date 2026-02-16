@@ -19,6 +19,7 @@ export interface WeatherData {
 
 export interface DayForecast {
   period: string;
+  periodDisplay: string;
   condition: string;
   iconCode: string;
   high: number | null;
@@ -50,6 +51,12 @@ function extractText(obj: unknown): string {
 const CANMORE_REGEX = new RegExp(
   `(\\d{8}T\\d{6}\\.\\d+Z_MSC_CitypageWeather_${CANMORE_SITE_CODE}_en\\.xml)`
 );
+
+const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+function periodLabel(name: string): string {
+  return WEEKDAYS.includes(name) ? name[0] : name;
+}
 
 const ICON_CODE_DESCRIPTIONS: Record<string, string> = {
   '00': 'Sunny', '01': 'A few clouds', '02': 'A mix of sun and cloud', '03': 'Cloudy periods',
@@ -157,8 +164,10 @@ export async function fetchCanmoreWeather(): Promise<WeatherData> {
       const nextLow = nextTempArr.find((t: Record<string, unknown>) => (t as Record<string, string>)['@_class'] === 'low');
       const nightLow = nextLow ? roundTemp(num(extractText(nextLow))) : null;
 
+      const fullPeriod = textForecastName || period;
       dayForecasts.push({
-        period: textForecastName || period,
+        period: fullPeriod,
+        periodDisplay: periodLabel(fullPeriod),
         condition: textSummary || cloudPrecipSummary || ICON_CODE_DESCRIPTIONS[icon ? String(icon).padStart(2, '0') : '00'] || '',
         iconCode: icon ? String(icon).padStart(2, '0') : '00',
         high,

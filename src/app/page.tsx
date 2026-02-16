@@ -1,7 +1,7 @@
 'use client'
 
 import { Icon, type IconString } from '@/components/Icon'
-import { SubGrid } from '@/components/SubGrid'
+import { MetricColumn } from '@/components/MetricColumn'
 import { ValueAndUnitPair } from '@/components/ValueAndUnitPair'
 import { getConditionIcon } from '@/lib/condition-icons'
 import {
@@ -10,8 +10,8 @@ import {
   FONT_AWESOME_ICON_STYLE,
   REFRESH_INTERVAL_MS,
 } from '@/lib/config'
-import { getIconVariantForStyle } from '@/lib/fontawesome-classes'
 import type { WeatherData } from '@/lib/ec-weather'
+import { getIconVariantForStyle } from '@/lib/fontawesome-classes'
 import React, { useEffect, useRef, useState } from 'react'
 import { twJoin } from 'tailwind-merge'
 
@@ -103,61 +103,136 @@ export default function Home() {
     lastSyncTime != null ? formatLastSynced(now - lastSyncTime) : null
 
   return (
-    <main className={twJoin('relative', 'h-screen', 'w-screen', 'overflow-hidden')}>
+    <main
+      className={twJoin('relative', 'h-screen', 'w-screen', 'overflow-hidden')}
+    >
       <div
-        className={twJoin(
-          'grid',
-          'h-full',
-          'w-full',
-          'grid-rows-[3fr_3fr_3fr_4fr]',
-        )}
+        className={twJoin('weather-grid', 'h-full', 'w-full')}
         style={orbitStyle}
       >
-        <div className="border-foreground/10 flex flex-col justify-center border-b">
-          <SubGrid
-            label="Current"
-            icon={conditionIcon}
-            caption={data.condition}
-            unit="°"
-            current={data.currentTemp}
-            high={data.todayHigh}
-            low={data.todayLow}
-            primary
-          />
+        <div
+          className={twJoin(
+            'ga-labels-header',
+            'inverted',
+            'py-2',
+            'border-foreground/35 border-r border-b',
+          )}
+        />
+        <div
+          className={twJoin(
+            'ga-condition-header',
+            'inverted',
+            'flex items-center justify-center py-2',
+            'border-foreground/35 border-r border-b',
+          )}
+        >
+          <span className="label-large">Condition</span>
         </div>
-
-        <div className="border-foreground/10 flex flex-col justify-center border-b">
-          <SubGrid
-            label="Wind"
-            icon={`${getIconVariantForStyle(FONT_AWESOME_ICON_STYLE)}:wind` as IconString}
-            caption="Wind"
-            unit="km/h"
-            spaceBeforeUnit
-            current={data.windSpeed}
-            high={data.windGust}
-            low={data.windSpeed}
-          />
+        <div
+          className={twJoin(
+            'ga-wind-header',
+            'flex items-center justify-center py-2',
+            'border-foreground/35 border-r border-b',
+          )}
+        >
+          <span className="label-large">Wind</span>
         </div>
-
-        <div className="flex flex-col justify-center">
-          <SubGrid
-            label="UV Index"
-            icon={`${getIconVariantForStyle(FONT_AWESOME_ICON_STYLE)}:sun` as IconString}
-            caption="UV Index"
-            current={data.uvIndexNow ?? data.uvIndexTodayHigh ?? 0}
-            high={data.uvIndexTodayHigh ?? 0}
-            low={0}
-          />
+        <div
+          className={twJoin(
+            'ga-uv-header',
+            'flex items-center justify-center py-2',
+            'border-foreground/35 border-r border-b',
+          )}
+        >
+          <span className="label-large">UV Index</span>
         </div>
-
-        <section aria-label="7-day forecast">
+        <div
+          className={twJoin(
+            'ga-forecast-header',
+            'flex items-center justify-center py-2',
+            'border-foreground/35 border-r border-b',
+          )}
+        >
+          <span className="label-large">Forecast</span>
+        </div>
+        <div
+          className={twJoin(
+            'ga-labels-current',
+            'inverted',
+            'flex items-center justify-center overflow-hidden px-2',
+            'border-foreground/35 border-r border-b',
+          )}
+        >
+          <span className="vertical-label">Current</span>
+        </div>
+        <div
+          className={twJoin(
+            'ga-labels-high',
+            'inverted',
+            'flex items-center justify-center overflow-hidden px-2',
+            'border-foreground/35 border-r border-b',
+          )}
+        >
+          <span className="vertical-label">High</span>
+        </div>
+        <div
+          className={twJoin(
+            'ga-labels-low',
+            'inverted',
+            'flex items-center justify-center overflow-hidden px-2',
+            'border-foreground/35 border-r',
+          )}
+        >
+          <span className="vertical-label">Low</span>
+        </div>
+        <MetricColumn
+          column="condition"
+          icon={conditionIcon}
+          caption={data.condition}
+          unit="°"
+          current={data.currentTemp}
+          high={data.todayHigh}
+          low={data.todayLow}
+          primary
+          inverted
+        />
+        <MetricColumn
+          column="wind"
+          icon={
+            `${getIconVariantForStyle(FONT_AWESOME_ICON_STYLE)}:wind` as IconString
+          }
+          caption="Wind"
+          unit="km/h"
+          spaceBeforeUnit
+          current={data.windSpeed}
+          high={data.windGust}
+          low={data.windSpeed}
+        />
+        <MetricColumn
+          column="uv"
+          icon={
+            `${getIconVariantForStyle(FONT_AWESOME_ICON_STYLE)}:sun` as IconString
+          }
+          caption="UV Index"
+          current={data.uvIndexNow ?? data.uvIndexTodayHigh ?? 0}
+          high={data.uvIndexTodayHigh ?? 0}
+          low={0}
+        />
+        <section
+          aria-label="7-day forecast"
+          className={twJoin(
+            'ga-forecast',
+            'border-foreground/10',
+            'flex items-center',
+            'border-l',
+          )}
+        >
           <ol
             className={twJoin(
               'divide-foreground/10',
-              'flex justify-stretch',
+              'flex flex-col justify-stretch',
               'h-full w-full',
               'divide-x',
-              'border-foreground/10 border-t',
             )}
           >
             {data.sevenDayForecast.map(day => {
@@ -167,13 +242,11 @@ export default function Home() {
                   key={day.period}
                   className={twJoin(
                     'h-full w-full',
-                    'flex flex-col',
-                    'items-center',
-                    'justify-center',
-                    'gap-3',
+                    'grid grid-cols-3',
+                    'items-center justify-items-center',
                   )}
                 >
-                  <span className="mb-2 font-medium">{day.period}</span>
+                  <span className="label-large">{day.periodDisplay}</span>
                   <Icon
                     name={dayIcon}
                     className="text-[3rem]"
@@ -205,7 +278,7 @@ export default function Home() {
       </div>
       {lastSyncedText && (
         <div
-          className="absolute bottom-2 left-0 right-0 flex justify-center text-xs opacity-30"
+          className="absolute right-0 bottom-2 left-0 flex justify-center text-xs opacity-30"
           aria-live="polite"
         >
           {lastSyncedText}
