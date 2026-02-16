@@ -1,16 +1,23 @@
 @import 'tailwindcss';
 
 :root {
-  --background: #ffe9a4;
-  --foreground: #0a1636;
-  --screen-wiper-beam-width: 25vw;
+  --color-light: #ffe9a4;
+  --color-dark: #000000;
+  --background: var(--color-light);
+  --foreground: var(--color-dark);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+}
+
+@utility font-body {
+  font-family: var(--font-body);
+}
+
+@utility font-numerals {
+  font-family: var(--font-body);
 }
 
 html {
@@ -21,55 +28,67 @@ html {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a1636; /* deep dark blue */
-    --foreground: #ffe9a4; /* pale gold */
+    --background: var(--color-dark);
+    --foreground: var(--color-light);
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  overflow: hidden;
-  @apply font-sans;
+  @apply bg-background;
+  @apply text-foreground;
+  @apply font-body;
+  @apply overflow-hidden;
 }
 
 @utility label {
-  @apply text-xs font-medium uppercase;
+  @apply whitespace-nowrap;
+  @apply text-xs;
+  @apply font-medium;
+  @apply uppercase;
   @apply opacity-50;
+  @apply leading-[1em];
 }
 
 @utility unit {
-  @apply label;
-  @apply pl-[0.5em];
-}
+  @apply whitespace-nowrap;
 
-@utility value {
-  @apply font-bold;
+  .primary-value &,
+  .secondary-value & {
+    @apply [font-weight:inherit];
+  }
 }
 
 @utility primary-value {
-  @apply value;
+  @apply font-numerals;
   @apply text-[8rem];
   @apply font-thin;
+  @apply leading-[1em];
 }
 
 @utility secondary-value {
+  @apply font-numerals;
   @apply primary-value;
-  @apply text-[3rem];
+  @apply text-[4rem];
+  @apply font-extralight;
 }
 
-@keyframes screen-wiper-sweep {
-  from {
-    background-position: calc(100% + var(--screen-wiper-beam-width)) 0;
-  }
-  to {
-    background-position: calc(-1 * var(--screen-wiper-beam-width)) 0;
-  }
+@utility tertiary-value {
+  @apply font-numerals;
+  @apply font-bold;
 }
 
-.screen-wiper {
-  background: linear-gradient(to right, var(--foreground), transparent);
-  background-size: var(--screen-wiper-beam-width) 100%;
-  background-repeat: no-repeat;
-  animation: screen-wiper-sweep ease-out forwards;
+@keyframes burn-in-orbit {
+  0%,
+  100% {
+    transform: translate(var(--burn-in-orbit-radius), 0);
+  }
+  25% {
+    transform: translate(0, var(--burn-in-orbit-radius));
+  }
+  50% {
+    transform: translate(calc(-1 * var(--burn-in-orbit-radius)), 0);
+  }
+  75% {
+    transform: translate(0, calc(-1 * var(--burn-in-orbit-radius)));
+  }
 }
