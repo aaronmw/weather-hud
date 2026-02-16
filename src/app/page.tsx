@@ -1,11 +1,16 @@
 'use client'
 
-import { Icon } from '@/components/Icon'
-import { ScreenWiper } from '@/components/ScreenWiper'
+import { Icon, type IconString } from '@/components/Icon'
 import { SubGrid } from '@/components/SubGrid'
 import { ValueAndUnitPair } from '@/components/ValueAndUnitPair'
 import { getConditionIcon } from '@/lib/condition-icons'
-import { REFRESH_INTERVAL_MS, SCREEN_WIPER_INTERVAL_MS } from '@/lib/config'
+import {
+  BURN_IN_ORBIT_DURATION_MS,
+  BURN_IN_ORBIT_RADIUS_PX,
+  FONT_AWESOME_ICON_STYLE,
+  REFRESH_INTERVAL_MS,
+} from '@/lib/config'
+import { getIconVariantForStyle } from '@/lib/fontawesome-classes'
 import type { WeatherData } from '@/lib/ec-weather'
 import React, { useEffect, useRef, useState } from 'react'
 import { twJoin } from 'tailwind-merge'
@@ -17,15 +22,24 @@ function fetchWeather() {
   })
 }
 
+function formatLastSynced(msAgo: number): string {
+  const sec = Math.floor(msAgo / 1000)
+  if (sec < 60) return `Last synced ${sec} second${sec === 1 ? '' : 's'} ago`
+  const min = Math.floor(sec / 60)
+  return `Last synced ${min} minute${min === 1 ? '' : 's'} ago`
+}
+
 export default function Home() {
   const [data, setData] = useState<WeatherData | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [wiperTrigger, setWiperTrigger] = useState(0)
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null)
+  const [now, setNow] = useState(() => Date.now())
   const initialLoadDone = useRef(false)
 
   const onRefresh = (d: WeatherData) => {
     setData(d)
     setError(null)
+    setLastSyncTime(Date.now())
     initialLoadDone.current = true
   }
 
@@ -47,101 +61,96 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    const id = setInterval(
-      () => setWiperTrigger(t => t + 1),
-      SCREEN_WIPER_INTERVAL_MS,
-    )
+    if (!lastSyncTime) return
+    const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [lastSyncTime])
+
+  const orbitStyle = {
+    '--burn-in-orbit-radius': `${BURN_IN_ORBIT_RADIUS_PX}px`,
+    'animation': `burn-in-orbit ${BURN_IN_ORBIT_DURATION_MS}ms linear infinite`,
+  } as React.CSSProperties
 
   if (error) {
     return (
-      <>
-        <main className="flex min-h-screen flex-col items-center justify-center p-8">
+      <main className="flex min-h-screen w-screen flex-col items-center justify-center overflow-hidden p-8">
+        <div
+          className="flex min-h-screen w-full flex-col items-center justify-center"
+          style={orbitStyle}
+        >
           <p className="text-red-600">Error: {error}</p>
-        </main>
-        {wiperTrigger > 0 && <ScreenWiper key={wiperTrigger} />}
-      </>
+        </div>
+      </main>
     )
   }
 
   if (!data) {
     return (
-      <>
-        <main className="flex min-h-screen flex-col items-center justify-center p-8">
+      <main className="flex min-h-screen w-screen flex-col items-center justify-center overflow-hidden p-8">
+        <div
+          className="flex min-h-screen w-full flex-col items-center justify-center"
+          style={orbitStyle}
+        >
           <p>Loading…</p>
-        </main>
-        {wiperTrigger > 0 && <ScreenWiper key={wiperTrigger} />}
-      </>
+        </div>
+      </main>
     )
   }
 
   const conditionIcon = getConditionIcon(data.iconCode)
 
+  const lastSyncedText =
+    lastSyncTime != null ? formatLastSynced(now - lastSyncTime) : null
+
   return (
-    <>
-      <main
+    <main className={twJoin('relative', 'h-screen', 'w-screen', 'overflow-hidden')}>
+      <div
         className={twJoin(
           'grid',
-          'h-screen',
-          'w-screen',
-          'grid-cols-[1fr_2fr]',
-          'grid-rows-[2fr_1fr]',
-          'overflow-hidden',
+          'h-full',
+          'w-full',
+          'grid-rows-[3fr_3fr_3fr_4fr]',
         )}
+        style={orbitStyle}
       >
-        <section
-          aria-label="Current weather"
-          className={twJoin(
-            'flex',
-            'flex-col',
-            'items-center',
-            'justify-center',
-            'p-8',
-            'border-foreground/10 border-r',
-          )}
-        >
-          <h1 className="mb-8 text-2xl font-semibold">{data.location}</h1>
-          <figure className="mb-4">
-            <Icon
-              name={conditionIcon}
-              className="text-[10rem]"
-            />
-          </figure>
-          <p className="mb-4">{data.condition}</p>
-        </section>
-
-        <section
-          aria-label="Conditions Summary"
-          className="grid grid-rows-[2fr_1fr_1fr] gap-0"
-        >
+        <div className="border-foreground/10 flex flex-col justify-center border-b">
           <SubGrid
             label="Current"
-            unit="°C"
+            icon={conditionIcon}
+            caption={data.condition}
+            unit="°"
             current={data.currentTemp}
             high={data.todayHigh}
             low={data.todayLow}
             primary
           />
+        </div>
+
+        <div className="border-foreground/10 flex flex-col justify-center border-b">
           <SubGrid
             label="Wind"
+            icon={`${getIconVariantForStyle(FONT_AWESOME_ICON_STYLE)}:wind` as IconString}
+            caption="Wind"
             unit="km/h"
+            spaceBeforeUnit
             current={data.windSpeed}
             high={data.windGust}
             low={data.windSpeed}
           />
+        </div>
+
+        <div className="flex flex-col justify-center">
           <SubGrid
             label="UV Index"
+            icon={`${getIconVariantForStyle(FONT_AWESOME_ICON_STYLE)}:sun` as IconString}
+            caption="UV Index"
             current={data.uvIndexNow ?? data.uvIndexTodayHigh ?? 0}
             high={data.uvIndexTodayHigh ?? 0}
             low={0}
           />
-        </section>
+        </div>
 
-        <section
-          aria-label="7-day forecast"
-          className="col-span-2"
-        >
+        <section aria-label="7-day forecast">
           <ol
             className={twJoin(
               'divide-foreground/10',
@@ -172,8 +181,8 @@ export default function Home() {
                   <dl className="grid grid-cols-[auto_1fr] items-center gap-x-2">
                     {(
                       [
-                        ['High', day.high ?? '—', day.high != null ? '°C' : ''],
-                        ['Low', day.low ?? '—', day.low != null ? '°C' : ''],
+                        ['High', day.high ?? '—', day.high != null ? '°' : ''],
+                        ['Low', day.low ?? '—', day.low != null ? '°' : ''],
                         ...(day.pop != null ? [['POP', day.pop, '%']] : []),
                       ] as [string, string | number, string][]
                     ).map(([label, value, unit]) => (
@@ -193,8 +202,15 @@ export default function Home() {
             })}
           </ol>
         </section>
-      </main>
-      {wiperTrigger > 0 && <ScreenWiper key={wiperTrigger} />}
-    </>
+      </div>
+      {lastSyncedText && (
+        <div
+          className="absolute bottom-2 left-0 right-0 flex justify-center text-xs opacity-30"
+          aria-live="polite"
+        >
+          {lastSyncedText}
+        </div>
+      )}
+    </main>
   )
 }
