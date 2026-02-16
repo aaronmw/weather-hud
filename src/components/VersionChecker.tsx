@@ -7,12 +7,15 @@ export function VersionChecker() {
   const buildIdRef = useRef<string | null>(null)
 
   useEffect(() => {
+    if (window.location.search.startsWith('?v=')) {
+      window.history.replaceState(null, '', window.location.pathname)
+    }
     const check = async () => {
       try {
-        const res = await fetch('/api/version')
+        const res = await fetch('/api/version', { cache: 'no-store' })
         const { buildId } = await res.json()
         if (buildIdRef.current !== null && buildIdRef.current !== buildId) {
-          window.location.reload()
+          window.location.replace(window.location.pathname + '?v=' + buildId)
         }
         buildIdRef.current = buildId
       } catch {
