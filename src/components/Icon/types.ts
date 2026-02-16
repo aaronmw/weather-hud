@@ -27,9 +27,11 @@ export type IconVariant =
   | 'duotone'
   | 'light'
   | 'regular'
+  | 'semibold'
   | 'sharp-light'
   | 'sharp-regular'
   | 'sharp-solid'
+  | 'sharp-thin'
   | 'solid'
   | 'thin'
 
@@ -41,3 +43,4 @@ export type WeatherIconName =
   | 'cloud-sun'
   | 'snowflake'
   | 'sun'
+  | 'wind'

@@ -1,3 +1,38 @@
-export const REFRESH_INTERVAL_MS = 30 * 60 * 1000
-export const SCREEN_WIPER_INTERVAL_MS = 10_000
-export const SCREEN_WIPER_DURATION_MS = 1000
+export const REFRESH_INTERVAL_MS = 15 * 60 * 1000
+export const BURN_IN_ORBIT_RADIUS_PX = 5
+export const BURN_IN_ORBIT_DURATION_MS = 60_000
+
+export const FONT_AWESOME_ICON_STYLE = 'duotone-thin' as FontAwesomeIconStyle
+
+export type FontAwesomeIconStyle =
+  | 'chisel'
+  | 'classic-light'
+  | 'classic-regular'
+  | 'classic-solid'
+  | 'classic-thin'
+  | 'duotone-light'
+  | 'duotone-regular'
+  | 'duotone-solid'
+  | 'duotone-thin'
+  | 'etch'
+  | 'graphite'
+  | 'jelly'
+  | 'jelly-duo'
+  | 'jelly-fill'
+  | 'notdog'
+  | 'notdog-duo'
+  | 'sharp-duotone-light'
+  | 'sharp-duotone-regular'
+  | 'sharp-duotone-solid'
+  | 'sharp-duotone-thin'
+  | 'sharp-light'
+  | 'sharp-regular'
+  | 'sharp-solid'
+  | 'sharp-thin'
+  | 'slab'
+  | 'slab-press'
+  | 'thumbprint'
+  | 'utility'
+  | 'utility-duo'
+  | 'utility-fill'
+  | 'whiteboard'
