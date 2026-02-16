@@ -49,12 +49,13 @@ body {
 
 @utility primary-value {
   @apply value;
-  @apply text-[12vh];
+  @apply text-[8rem];
   @apply font-thin;
 }
 
 @utility secondary-value {
   @apply primary-value;
+  @apply text-[3rem];
 }
 
 @keyframes screen-wiper-sweep {

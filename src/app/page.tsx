@@ -85,7 +85,7 @@ export default function Home() {
           'grid',
           'h-screen',
           'w-screen',
-          'grid-cols-2',
+          'grid-cols-[1fr_2fr]',
           'grid-rows-[2fr_1fr]',
           'overflow-hidden',
         )}
@@ -113,7 +113,7 @@ export default function Home() {
 
         <section
           aria-label="Conditions Summary"
-          className="grid grid-rows-3 gap-0"
+          className="grid grid-rows-[2fr_1fr_1fr] gap-0"
         >
           <SubGrid
             label="Current"
@@ -121,6 +121,7 @@ export default function Home() {
             current={data.currentTemp}
             high={data.todayHigh}
             low={data.todayLow}
+            primary
           />
           <SubGrid
             label="Wind"
