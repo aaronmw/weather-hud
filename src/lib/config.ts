@@ -2,7 +2,7 @@ export const REFRESH_INTERVAL_MS = 15 * 60 * 1000
 export const BURN_IN_ORBIT_RADIUS_PX = 5
 export const BURN_IN_ORBIT_DURATION_MS = 60_000
 
-export const FONT_AWESOME_ICON_STYLE = 'duotone-thin' as FontAwesomeIconStyle
+export const FONT_AWESOME_ICON_STYLE = 'duotone-regular' as FontAwesomeIconStyle
 
 export type FontAwesomeIconStyle =
   | 'chisel'
