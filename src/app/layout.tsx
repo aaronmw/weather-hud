@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Noto_Sans_JP } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 
-const inter = Inter({
+const notoSansJP = Noto_Sans_JP({
   variable: '--font-body',
   subsets: ['latin'],
   weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
@@ -29,7 +29,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} antialiased`}
+        className={`${notoSansJP.variable} antialiased`}
       >
         {children}
       </body>
