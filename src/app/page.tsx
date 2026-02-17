@@ -98,6 +98,57 @@ export default function Home() {
   }
 
   const conditionIcon = getConditionIcon(data.iconCode)
+  const iconStyle = getIconVariantForStyle(FONT_AWESOME_ICON_STYLE)
+
+  const headerConfig: {
+    ga: string
+    label: string | null
+    highlighted?: boolean
+  }[] = [
+    { ga: 'ga-labels-header', label: null, highlighted: true },
+    { ga: 'ga-condition-header', label: 'Condition', highlighted: true },
+    { ga: 'ga-wind-header', label: 'Wind' },
+    { ga: 'ga-uv-header', label: 'UV Index' },
+    { ga: 'ga-forecast-header', label: 'Forecast' },
+  ]
+
+  const labelConfig: { ga: string; label: string; borderB?: boolean }[] = [
+    { ga: 'ga-labels-current', label: 'Current', borderB: true },
+    { ga: 'ga-labels-high', label: 'High', borderB: true },
+    { ga: 'ga-labels-low', label: 'Low' },
+  ]
+
+  const metricConfig = [
+    {
+      column: 'condition' as const,
+      icon: conditionIcon,
+      caption: data.condition,
+      unit: '°',
+      current: data.currentTemp,
+      high: data.todayHigh,
+      low: data.todayLow,
+      primary: true,
+      highlighted: true,
+    },
+    {
+      column: 'wind' as const,
+      icon: `${iconStyle}:wind` as IconString,
+      caption: 'Wind',
+      unit: 'km/h',
+      spaceBeforeUnit: true,
+      current: data.windSpeed,
+      high: data.windGust,
+      low: data.windSpeed,
+    },
+    {
+      column: 'uv' as const,
+      icon: `${iconStyle}:sun` as IconString,
+      caption: 'UV Index',
+      current: data.uvIndexNow ?? data.uvIndexTodayHigh ?? 0,
+      high: data.uvIndexTodayHigh ?? 0,
+      low: 0,
+    },
+  ]
 
   const lastSyncedText =
     lastSyncTime != null ? formatLastSynced(now - lastSyncTime) : null
@@ -110,114 +161,40 @@ export default function Home() {
         className={twJoin('weather-grid', 'h-full', 'w-full')}
         style={orbitStyle}
       >
-        <div
-          className={twJoin(
-            'ga-labels-header',
-            'inverted',
-            'py-2',
-            'border-foreground/35 border-r border-b',
-          )}
-        />
-        <div
-          className={twJoin(
-            'ga-condition-header',
-            'inverted',
-            'flex items-center justify-center py-2',
-            'border-foreground/35 border-r border-b',
-          )}
-        >
-          <span className="label-large">Condition</span>
-        </div>
-        <div
-          className={twJoin(
-            'ga-wind-header',
-            'flex items-center justify-center py-2',
-            'border-foreground/35 border-r border-b',
-          )}
-        >
-          <span className="label-large">Wind</span>
-        </div>
-        <div
-          className={twJoin(
-            'ga-uv-header',
-            'flex items-center justify-center py-2',
-            'border-foreground/35 border-r border-b',
-          )}
-        >
-          <span className="label-large">UV Index</span>
-        </div>
-        <div
-          className={twJoin(
-            'ga-forecast-header',
-            'flex items-center justify-center py-2',
-            'border-foreground/35 border-r border-b',
-          )}
-        >
-          <span className="label-large">Forecast</span>
-        </div>
-        <div
-          className={twJoin(
-            'ga-labels-current',
-            'inverted',
-            'flex items-center justify-center overflow-hidden px-2',
-            'border-foreground/35 border-r border-b',
-          )}
-        >
-          <span className="vertical-label">Current</span>
-        </div>
-        <div
-          className={twJoin(
-            'ga-labels-high',
-            'inverted',
-            'flex items-center justify-center overflow-hidden px-2',
-            'border-foreground/35 border-r border-b',
-          )}
-        >
-          <span className="vertical-label">High</span>
-        </div>
-        <div
-          className={twJoin(
-            'ga-labels-low',
-            'inverted',
-            'flex items-center justify-center overflow-hidden px-2',
-            'border-foreground/35 border-r',
-          )}
-        >
-          <span className="vertical-label">Low</span>
-        </div>
-        <MetricColumn
-          column="condition"
-          icon={conditionIcon}
-          caption={data.condition}
-          unit="°"
-          current={data.currentTemp}
-          high={data.todayHigh}
-          low={data.todayLow}
-          primary
-          inverted
-        />
-        <MetricColumn
-          column="wind"
-          icon={
-            `${getIconVariantForStyle(FONT_AWESOME_ICON_STYLE)}:wind` as IconString
-          }
-          caption="Wind"
-          unit="km/h"
-          spaceBeforeUnit
-          current={data.windSpeed}
-          high={data.windGust}
-          low={data.windSpeed}
-        />
-        <MetricColumn
-          column="uv"
-          icon={
-            `${getIconVariantForStyle(FONT_AWESOME_ICON_STYLE)}:sun` as IconString
-          }
-          caption="UV Index"
-          current={data.uvIndexNow ?? data.uvIndexTodayHigh ?? 0}
-          high={data.uvIndexTodayHigh ?? 0}
-          low={0}
-        />
+        {headerConfig.map(({ ga, label, highlighted }) => (
+          <div
+            key={ga}
+            className={twJoin(
+              ga,
+              highlighted && 'highlighted',
+              label != null && 'flex items-center justify-center',
+              'py-2',
+              'border-foreground/20 border-r border-b',
+            )}
+          >
+            {label != null && <span className="label-large">{label}</span>}
+          </div>
+        ))}
+        {labelConfig.map(({ ga, label, borderB = false }) => (
+          <div
+            key={ga}
+            className={twJoin(
+              ga,
+              'highlighted',
+              'flex items-center justify-center overflow-hidden px-2',
+              'border-foreground/20 border-r',
+              borderB && 'border-b',
+            )}
+          >
+            <span className="vertical-label">{label}</span>
+          </div>
+        ))}
+        {metricConfig.map(props => (
+          <MetricColumn
+            key={props.column}
+            {...props}
+          />
+        ))}
         <section
           aria-label="7-day forecast"
           className={twJoin(
@@ -229,7 +206,7 @@ export default function Home() {
         >
           <ol
             className={twJoin(
-              'divide-foreground/35',
+              'divide-foreground/20',
               'flex flex-col justify-stretch',
               'h-full w-full',
               'divide-x divide-y',

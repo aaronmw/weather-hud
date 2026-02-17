@@ -11,7 +11,7 @@ const baseCellClass = twJoin(
   'items-center',
   'justify-center',
   'px-6',
-  'border-foreground/35',
+  'border-foreground/20',
   'gap-2',
 )
 
@@ -43,7 +43,7 @@ export function MetricColumn({
   low,
   primary = false,
   spaceBeforeUnit = false,
-  inverted = false,
+  highlighted = false,
 }: {
   column: Column
   icon: IconString
@@ -54,12 +54,12 @@ export function MetricColumn({
   low: string | number
   primary?: boolean
   spaceBeforeUnit?: boolean
-  inverted?: boolean
+  highlighted?: boolean
 }) {
   const valueClass = primary ? 'primary-value' : 'primary-value'
   const [gaHeader, gaCurrent, gaHigh, gaLow] = gridAreaMap[column]
 
-  const invertedClass = inverted ? 'inverted' : ''
+  const highlightClass = highlighted ? 'highlighted' : ''
   const valueCell = (
     value: string | number,
     ga: string,
@@ -71,7 +71,7 @@ export function MetricColumn({
       className={twMerge(
         isLastRow ? cellClassLastRow : cellClass,
         ga,
-        invertedClass,
+        highlightClass,
       )}
     >
       <div className={opacityClass}>
@@ -91,16 +91,16 @@ export function MetricColumn({
 
   return (
     <>
-      <div className={twMerge(cellClass, gaHeader, invertedClass)}>
+      <div className={twMerge(cellClass, gaHeader, highlightClass)}>
         <Icon
           name={icon}
           className="text-[5rem]"
         />
         <span className="text-sm">{caption}</span>
       </div>
-      {valueCell(current, gaCurrent, 'opacity-85', 'Current', false)}
-      {valueCell(high, gaHigh, 'opacity-75', 'High', false)}
-      {valueCell(low, gaLow, 'opacity-50', 'Low', true)}
+      {valueCell(current, gaCurrent, '', 'Current', false)}
+      {valueCell(high, gaHigh, '', 'High', false)}
+      {valueCell(low, gaLow, '', 'Low', true)}
     </>
   )
 }
