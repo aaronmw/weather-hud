@@ -7,16 +7,31 @@ import { getConditionIcon } from '@/lib/condition-icons'
 import {
   BURN_IN_ORBIT_DURATION_MS,
   BURN_IN_ORBIT_RADIUS_PX,
+  DEFAULT_PROVINCE,
+  DEFAULT_SITE_CODE,
   FONT_AWESOME_ICON_STYLE,
   REFRESH_INTERVAL_MS,
 } from '@/lib/config'
 import type { WeatherData } from '@/lib/ec-weather'
 import { getIconVariantForStyle } from '@/lib/fontawesome-classes'
-import React, { useEffect, useRef, useState } from 'react'
+import { findNearestStation, findStationByCode } from '@/lib/stations'
+import { getSunTimes } from '@/lib/sun'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { twJoin } from 'tailwind-merge'
 
-function fetchWeather() {
-  return fetch('/api/weather').then(res => {
+interface Location {
+  siteCode: string
+  province: string
+  lat: number
+  lng: number
+}
+
+function fetchWeather(location: Location) {
+  const params = new URLSearchParams({
+    siteCode: location.siteCode,
+    province: location.province,
+  })
+  return fetch(`/api/weather?${params}`).then((res) => {
     if (!res.ok) throw new Error(res.statusText)
     return res.json()
   })
@@ -34,37 +49,76 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  const [location, setLocation] = useState<Location>(() => {
+    const defaultStation = findStationByCode(DEFAULT_SITE_CODE)
+    return {
+      siteCode: DEFAULT_SITE_CODE,
+      province: DEFAULT_PROVINCE,
+      lat: defaultStation?.lat ?? 51.09,
+      lng: defaultStation?.lng ?? -115.36,
+    }
+  })
   const initialLoadDone = useRef(false)
 
-  const onRefresh = (d: WeatherData) => {
+  const onRefresh = useCallback((d: WeatherData) => {
     setData(d)
     setError(null)
     setLastSyncTime(Date.now())
     initialLoadDone.current = true
-  }
+  }, [])
 
   useEffect(() => {
-    fetchWeather()
-      .then(onRefresh)
-      .catch(err => setError(err.message))
+    if (!navigator.geolocation) return
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const station = findNearestStation(
+          pos.coords.latitude,
+          pos.coords.longitude,
+        )
+        console.log(
+          `Nearest station: ${station.name}, ${station.province} (${station.code})`,
+        )
+        setLocation({
+          siteCode: station.code,
+          province: station.province,
+          lat: station.lat,
+          lng: station.lng,
+        })
+      },
+      () => {
+        /* denied or unavailable — keep default */
+      },
+    )
   }, [])
+
+  useEffect(() => {
+    fetchWeather(location)
+      .then(onRefresh)
+      .catch((err) => setError(err.message))
+  }, [location, onRefresh])
 
   useEffect(() => {
     const id = setInterval(
       () =>
-        fetchWeather()
+        fetchWeather(location)
           .then(onRefresh)
-          .catch(err => setError(err.message)),
+          .catch((err) => setError(err.message)),
       REFRESH_INTERVAL_MS,
     )
     return () => clearInterval(id)
-  }, [])
+  }, [location, onRefresh])
 
   useEffect(() => {
     if (!lastSyncTime) return
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
   }, [lastSyncTime])
+
+  const isNight = useMemo(() => {
+    const { sunrise, sunset } = getSunTimes(location.lat, location.lng, new Date(now))
+    return now < sunrise.getTime() || now >= sunset.getTime()
+  }, [location.lat, location.lng, now])
 
   const orbitStyle = {
     '--burn-in-orbit-radius': `${BURN_IN_ORBIT_RADIUS_PX}px`,
@@ -155,7 +209,14 @@ export default function Home() {
 
   return (
     <main
-      className={twJoin('relative', 'h-screen', 'w-screen', 'overflow-hidden')}
+      className={twJoin(
+        'relative',
+        'h-screen',
+        'w-screen',
+        'overflow-hidden',
+        'transition-opacity duration-[10s]',
+        isNight ? 'opacity-60' : 'opacity-100',
+      )}
     >
       <div
         className={twJoin('weather-grid', 'h-full', 'w-full')}
@@ -253,12 +314,14 @@ export default function Home() {
           </ol>
         </section>
       </div>
-      {lastSyncedText && (
+      {(data?.location || lastSyncedText) && (
         <div
-          className="absolute right-0 bottom-2 left-0 flex justify-center text-xs opacity-30"
+          className="absolute right-0 bottom-2 left-0 flex justify-center gap-2 text-xs opacity-30"
           aria-live="polite"
         >
-          {lastSyncedText}
+          {data?.location && <span>{data.location}</span>}
+          {data?.location && lastSyncedText && <span>&bull;</span>}
+          {lastSyncedText && <span>{lastSyncedText}</span>}
         </div>
       )}
     </main>
