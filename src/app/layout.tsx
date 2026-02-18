@@ -10,8 +10,8 @@ const notoSansJP = Noto_Sans_JP({
 })
 
 export const metadata: Metadata = {
-  title: 'Weather HUD - Canmore',
-  description: 'Weather conditions for Canmore, AB',
+  title: 'Weather HUD',
+  description: 'Ambient weather display using Environment Canada data',
 }
 
 export default function RootLayout({

@@ -1,7 +1,6 @@
 import { XMLParser } from 'fast-xml-parser';
 
-const CANMORE_SITE_CODE = 's0000403';
-const EC_BASE = 'https://dd.weather.gc.ca/today/citypage_weather/AB';
+const EC_BASE = 'https://dd.weather.gc.ca/today/citypage_weather';
 
 export interface WeatherData {
   location: string;
@@ -48,10 +47,6 @@ function extractText(obj: unknown): string {
   return '';
 }
 
-const CANMORE_REGEX = new RegExp(
-  `(\\d{8}T\\d{6}\\.\\d+Z_MSC_CitypageWeather_${CANMORE_SITE_CODE}_en\\.xml)`
-);
-
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 function periodLabel(name: string): string {
@@ -72,23 +67,31 @@ const ICON_CODE_DESCRIPTIONS: Record<string, string> = {
   '45': 'Thunderstorms', '46': 'Thunderstorms', '47': 'Chance of thunderstorms',
 };
 
-export async function fetchCanmoreWeather(): Promise<WeatherData> {
+export async function fetchWeather(
+  siteCode: string,
+  province: string,
+): Promise<WeatherData> {
+  const base = `${EC_BASE}/${province}`;
+  const siteRegex = new RegExp(
+    `(\\d{8}T\\d{6}\\.\\d+Z_MSC_CitypageWeather_${siteCode}_en\\.xml)`,
+  );
+
   let hour = new Date().getUTCHours();
   let filename: string | undefined;
 
   for (let attempt = 0; attempt < 3; attempt++) {
     const h = hour.toString().padStart(2, '0');
-    const dirRes = await fetch(`${EC_BASE}/${h}/`, { next: { revalidate: 3600 } });
+    const dirRes = await fetch(`${base}/${h}/`);
     const dirHtml = await dirRes.text();
-    filename = dirHtml.match(CANMORE_REGEX)?.[1];
+    filename = dirHtml.match(siteRegex)?.[1];
     if (filename) break;
     hour = (hour - 1 + 24) % 24;
   }
 
-  if (!filename) throw new Error('Canmore weather file not found');
+  if (!filename) throw new Error(`Weather file not found for ${siteCode} in ${province}`);
   const h = hour.toString().padStart(2, '0');
 
-  const xmlRes = await fetch(`${EC_BASE}/${h}/${filename}`, { next: { revalidate: 3600 } });
+  const xmlRes = await fetch(`${base}/${h}/${filename}`);
   const xml = await xmlRes.text();
   const parser = new XMLParser({ ignoreAttributes: false });
   const doc = parser.parse(xml) as Record<string, unknown>;
@@ -96,9 +99,11 @@ export async function fetchCanmoreWeather(): Promise<WeatherData> {
   const siteData = doc?.siteData as Record<string, unknown> | undefined;
   if (!siteData) throw new Error('Invalid XML structure');
 
-  const location = extractText(
-    (siteData?.location as Record<string, unknown>)?.name
-  ) || 'Canmore';
+  const locationObj = siteData?.location as Record<string, unknown> | undefined;
+  const locationName = extractText(locationObj?.name);
+  const locationProvince = extractText(
+    (locationObj?.province as Record<string, unknown>) ?? locationObj?.province
+  );
   const current = siteData?.currentConditions as Record<string, unknown> | undefined;
   const currentCondition = extractText(current?.condition);
   const forecastGroup = siteData?.forecastGroup as Record<string, unknown> | undefined;
@@ -189,7 +194,9 @@ export async function fetchCanmoreWeather(): Promise<WeatherData> {
   }
 
   return {
-    location: `${location}, AB`,
+    location: locationProvince
+      ? `${locationName}, ${locationProvince}`
+      : locationName || province,
     condition: condition || ICON_CODE_DESCRIPTIONS[iconCode] || '—',
     iconCode: iconCode || '00',
     currentTemp,
