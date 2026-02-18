@@ -215,7 +215,7 @@ export default function Home() {
         'w-screen',
         'overflow-hidden',
         'transition-opacity duration-[10s]',
-        isNight ? 'opacity-60' : 'opacity-100',
+        isNight ? 'opacity-40' : 'opacity-100',
       )}
     >
       <div
