@@ -7,31 +7,19 @@ import { getConditionIcon } from '@/lib/condition-icons'
 import {
   BURN_IN_ORBIT_DURATION_MS,
   BURN_IN_ORBIT_RADIUS_PX,
-  DEFAULT_PROVINCE,
-  DEFAULT_SITE_CODE,
+  CANMORE_LAT,
+  CANMORE_LNG,
   FONT_AWESOME_ICON_STYLE,
   REFRESH_INTERVAL_MS,
 } from '@/lib/config'
 import type { WeatherData } from '@/lib/ec-weather'
 import { getIconVariantForStyle } from '@/lib/fontawesome-classes'
-import { findNearestStation, findStationByCode } from '@/lib/stations'
 import { getSunTimes } from '@/lib/sun'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { twJoin } from 'tailwind-merge'
 
-interface Location {
-  siteCode: string
-  province: string
-  lat: number
-  lng: number
-}
-
-function fetchWeather(location: Location) {
-  const params = new URLSearchParams({
-    siteCode: location.siteCode,
-    province: location.province,
-  })
-  return fetch(`/api/weather?${params}`).then((res) => {
+function fetchWeather() {
+  return fetch('/api/weather').then((res) => {
     if (!res.ok) throw new Error(res.statusText)
     return res.json()
   })
@@ -49,66 +37,31 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null)
   const [now, setNow] = useState(() => Date.now())
-  const [location, setLocation] = useState<Location>(() => {
-    const defaultStation = findStationByCode(DEFAULT_SITE_CODE)
-    return {
-      siteCode: DEFAULT_SITE_CODE,
-      province: DEFAULT_PROVINCE,
-      lat: defaultStation?.lat ?? 51.09,
-      lng: defaultStation?.lng ?? -115.36,
-    }
-  })
   const initialLoadDone = useRef(false)
 
-  const onRefresh = useCallback((d: WeatherData) => {
+  const onRefresh = (d: WeatherData) => {
     setData(d)
     setError(null)
     setLastSyncTime(Date.now())
     initialLoadDone.current = true
-  }, [])
+  }
 
   useEffect(() => {
-    if (!navigator.geolocation) return
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const station = findNearestStation(
-          pos.coords.latitude,
-          pos.coords.longitude,
-        )
-        console.log(
-          `Nearest station: ${station.name}, ${station.province} (${station.code})`,
-        )
-        setLocation({
-          siteCode: station.code,
-          province: station.province,
-          lat: station.lat,
-          lng: station.lng,
-        })
-      },
-      () => {
-        /* denied or unavailable — keep default */
-      },
-      { enableHighAccuracy: true },
-    )
-  }, [])
-
-  useEffect(() => {
-    fetchWeather(location)
+    fetchWeather()
       .then(onRefresh)
       .catch((err) => setError(err.message))
-  }, [location, onRefresh])
+  }, [])
 
   useEffect(() => {
     const id = setInterval(
       () =>
-        fetchWeather(location)
+        fetchWeather()
           .then(onRefresh)
           .catch((err) => setError(err.message)),
       REFRESH_INTERVAL_MS,
     )
     return () => clearInterval(id)
-  }, [location, onRefresh])
+  }, [])
 
   useEffect(() => {
     if (!lastSyncTime) return
@@ -117,9 +70,9 @@ export default function Home() {
   }, [lastSyncTime])
 
   const isNight = useMemo(() => {
-    const { sunrise, sunset } = getSunTimes(location.lat, location.lng, new Date(now))
+    const { sunrise, sunset } = getSunTimes(CANMORE_LAT, CANMORE_LNG, new Date(now))
     return now < sunrise.getTime() || now >= sunset.getTime()
-  }, [location.lat, location.lng, now])
+  }, [now])
 
   const orbitStyle = {
     '--burn-in-orbit-radius': `${BURN_IN_ORBIT_RADIUS_PX}px`,
