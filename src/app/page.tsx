@@ -89,6 +89,7 @@ export default function Home() {
       () => {
         /* denied or unavailable — keep default */
       },
+      { enableHighAccuracy: true },
     )
   }, [])
 
