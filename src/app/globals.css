@@ -23,7 +23,8 @@
 }
 
 @utility highlighted {
-  background-color: color-mix(in srgb, var(--background) 90%, white);
+  background-color: color-mix(in srgb, var(--foreground) 10%, transparent);
+  transition: background-color 10s;
 }
 
 @utility font-body {
@@ -42,7 +43,7 @@ html {
 
 [data-theme='dark'] {
   --background: var(--color-dark);
-  --foreground: var(--color-light);
+  --foreground: color-mix(in srgb, var(--color-light) 40%, transparent);
 }
 
 body {
@@ -51,6 +52,9 @@ body {
   @apply font-body;
   @apply overflow-hidden;
   @apply whitespace-nowrap;
+  transition:
+    color 10s,
+    background-color 10s;
 }
 
 @utility label {

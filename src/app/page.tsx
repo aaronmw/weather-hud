@@ -75,14 +75,44 @@ export default function Home() {
     return now < sunrise.getTime() || now >= sunset.getTime()
   }, [now])
 
+  const [devThemeOverride, setDevThemeOverride] = useState<'light' | 'dark' | null>(null)
+
+  const effectiveTheme =
+    process.env.NODE_ENV === 'development' && devThemeOverride != null
+      ? devThemeOverride
+      : isNight
+        ? 'dark'
+        : 'light'
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', effectiveTheme)
+  }, [effectiveTheme])
+
   const orbitStyle = {
     '--burn-in-orbit-radius': `${BURN_IN_ORBIT_RADIUS_PX}px`,
     'animation': `burn-in-orbit ${BURN_IN_ORBIT_DURATION_MS}ms linear infinite`,
   } as React.CSSProperties
 
+  const devThemeToggle =
+    process.env.NODE_ENV === 'development' ? (
+      <button
+        type="button"
+        onClick={() =>
+          setDevThemeOverride(prev =>
+            prev == null ? (isNight ? 'light' : 'dark') : prev === 'dark' ? 'light' : 'dark',
+          )
+        }
+        className="fixed bottom-2 right-2 rounded border border-foreground/30 bg-background/80 px-2 py-1 text-xs opacity-60 hover:opacity-100"
+        aria-label={`Toggle theme (currently ${effectiveTheme})`}
+      >
+        {effectiveTheme}
+      </button>
+    ) : null
+
   if (error) {
     return (
-      <main className="flex min-h-screen w-screen flex-col items-center justify-center overflow-hidden p-8">
+      <>
+        <main className="flex min-h-screen w-screen flex-col items-center justify-center overflow-hidden p-8">
         <div
           className="flex min-h-screen w-full flex-col items-center justify-center"
           style={orbitStyle}
@@ -90,12 +120,15 @@ export default function Home() {
           <p className="text-red-600">Error: {error}</p>
         </div>
       </main>
+        {devThemeToggle}
+      </>
     )
   }
 
   if (!data) {
     return (
-      <main className="flex min-h-screen w-screen flex-col items-center justify-center overflow-hidden p-8">
+      <>
+        <main className="flex min-h-screen w-screen flex-col items-center justify-center overflow-hidden p-8">
         <div
           className="flex min-h-screen w-full flex-col items-center justify-center"
           style={orbitStyle}
@@ -103,17 +136,15 @@ export default function Home() {
           <p>Loading…</p>
         </div>
       </main>
+        {devThemeToggle}
+      </>
     )
   }
 
   const conditionIcon = getConditionIcon(data.iconCode)
   const iconStyle = getIconVariantForStyle(FONT_AWESOME_ICON_STYLE)
 
-  const headerConfig: {
-    ga: string
-    label: string | null
-    highlighted?: boolean
-  }[] = [
+  const headerConfig: { ga: string; label: string | null; highlighted?: boolean }[] = [
     { ga: 'ga-labels-header', label: null, highlighted: true },
     { ga: 'ga-condition-header', label: 'Condition', highlighted: true },
     { ga: 'ga-wind-header', label: 'Wind' },
@@ -172,8 +203,6 @@ export default function Home() {
         'h-screen',
         'w-screen',
         'overflow-hidden',
-        'transition-opacity duration-[10s]',
-        isNight ? 'opacity-40' : 'opacity-100',
       )}
     >
       <div
@@ -334,6 +363,7 @@ export default function Home() {
           {lastSyncedText && <span>{lastSyncedText}</span>}
         </div>
       )}
+      {devThemeToggle}
     </main>
   )
 }
