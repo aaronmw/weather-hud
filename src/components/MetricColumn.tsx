@@ -41,7 +41,6 @@ export function MetricColumn({
   current,
   high,
   low,
-  primary = false,
   spaceBeforeUnit = false,
   highlighted = false,
   directionIcon,
@@ -53,12 +52,11 @@ export function MetricColumn({
   current: string | number
   high: HighValue
   low: LowValue
-  primary?: boolean
   spaceBeforeUnit?: boolean
   highlighted?: boolean
   directionIcon?: IconString
 }) {
-  const valueClass = primary ? 'primary-value' : 'primary-value'
+  const valueClass = 'primary-value'
   const [gaHeader, gaCurrent, gaHigh, gaLow] = gridAreaMap[column]
   const highlightClass = highlighted ? 'highlighted' : ''
   const srLabels: [string, string, string] =

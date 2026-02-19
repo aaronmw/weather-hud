@@ -136,7 +136,6 @@ export default function Home() {
       current: data.currentTemp,
       high: data.todayHigh,
       low: data.todayLow,
-      primary: true,
       highlighted: true,
     },
     {
