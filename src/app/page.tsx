@@ -303,7 +303,7 @@ export default function Home() {
                       aria-label={`Temperature range ${day.low ?? '—'}° to ${day.high ?? '—'}°`}
                     >
                       <div
-                        className="absolute inset-y-0 left-0 bg-blue-500"
+                        className="absolute inset-y-0 left-0 bg-foreground"
                         style={{
                           left: `${leftPct}%`,
                           width: `${widthPct}%`,
@@ -311,7 +311,7 @@ export default function Home() {
                       />
                       {currentPct != null && (
                         <div
-                          className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-blue-700"
+                          className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-background bg-foreground"
                           style={{ left: `${currentPct}%` }}
                           aria-hidden
                         />
