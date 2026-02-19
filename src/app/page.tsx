@@ -146,8 +146,12 @@ export default function Home() {
       unit: 'km/h',
       spaceBeforeUnit: true,
       current: data.windSpeed,
-      high: data.windGust,
-      low: data.windSpeed,
+      high: {
+        type: 'delta' as const,
+        value: Math.max(0, data.windGust - data.windSpeed),
+      },
+      low: { type: 'direction' as const, bearing: data.windDirection },
+      directionIcon: `${iconStyle}:arrow-up` as IconString,
     },
     {
       column: 'uv' as const,

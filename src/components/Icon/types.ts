@@ -36,7 +36,9 @@ export type IconVariant =
   | 'thin'
 
 export type WeatherIconName =
+  | 'arrow-up'
   | 'bolt'
+  | 'plus'
   | 'cloud'
   | 'cloud-bolt'
   | 'cloud-rain'

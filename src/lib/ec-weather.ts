@@ -11,6 +11,7 @@ export interface WeatherData {
   todayLow: number;
   windSpeed: number;
   windGust: number;
+  windDirection: number | null;
   uvIndexNow: number | null;
   uvIndexTodayHigh: number | null;
   sevenDayForecast: DayForecast[];
@@ -115,6 +116,8 @@ export async function fetchWeather(
   const windSpeed = num(extractText(windObj?.speed)) ?? 0;
   const windGustRaw = extractText(windObj?.gust);
   const windGust = windGustRaw === '00' || windGustRaw === '' ? windSpeed : (num(windGustRaw) ?? windSpeed);
+  const windBearing = num(extractText(windObj?.bearing));
+  const windDirection = windBearing != null && windBearing >= 0 && windBearing <= 360 ? windBearing : null;
 
   let todayHigh = 0;
   let todayLow = 0;
@@ -204,6 +207,7 @@ export async function fetchWeather(
     todayLow,
     windSpeed,
     windGust,
+    windDirection,
     uvIndexNow: uvIndexTodayHigh,
     uvIndexTodayHigh,
     sevenDayForecast: dayForecasts,
