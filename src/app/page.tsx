@@ -232,44 +232,96 @@ export default function Home() {
               'divide-x divide-y',
             )}
           >
-            {data.sevenDayForecast.map(day => {
-              const dayIcon = getConditionIcon(day.iconCode)
-              return (
-                <li
-                  key={day.period}
-                  className={twJoin(
-                    'h-full w-full',
-                    'grid grid-cols-3',
-                    'items-center justify-items-center',
-                  )}
-                >
-                  <span className="label-large">{day.periodDisplay}</span>
-                  <Icon
-                    name={dayIcon}
-                    className="text-[3rem]"
-                  />
-                  <dl className="grid grid-cols-[auto_1fr] items-center gap-x-2">
-                    {(
-                      [
-                        ['High', day.high ?? '—', day.high != null ? '°' : ''],
-                        ['Low', day.low ?? '—', day.low != null ? '°' : ''],
-                        ...(day.pop != null ? [['POP', day.pop, '%']] : []),
-                      ] as [string, string | number, string][]
-                    ).map(([label, value, unit]) => (
-                      <React.Fragment key={label}>
-                        <dt className="label">{label}</dt>
-                        <dd>
-                          <ValueAndUnitPair
-                            value={value}
-                            unit={unit}
-                          />
-                        </dd>
-                      </React.Fragment>
-                    ))}
-                  </dl>
-                </li>
+            {(() => {
+              const temps = data.sevenDayForecast.flatMap(d =>
+                [d.high, d.low].filter((t): t is number => t != null),
               )
-            })}
+              const scaleMin = temps.length ? Math.min(...temps) - 2 : -40
+              const scaleMax = temps.length ? Math.max(...temps) + 2 : 40
+              const scaleRange = scaleMax - scaleMin
+
+              return data.sevenDayForecast.map(day => {
+                const dayIcon = getConditionIcon(day.iconCode)
+                const low = day.low ?? scaleMin
+                const high = day.high ?? scaleMax
+                const leftPct = Math.max(0, ((low - scaleMin) / scaleRange) * 100)
+                const widthPct = Math.min(
+                  100 - leftPct,
+                  ((high - low) / scaleRange) * 100,
+                )
+                const isToday = day.period === 'Today'
+                const currentPct =
+                  isToday && data.currentTemp != null
+                    ? Math.max(
+                        0,
+                        Math.min(
+                          100,
+                          ((data.currentTemp - scaleMin) / scaleRange) * 100,
+                        ),
+                      )
+                    : null
+
+                return (
+                  <li
+                    key={day.period}
+                    className={twJoin(
+                      'h-full w-full',
+                      'grid grid-cols-3 grid-rows-[1fr_auto]',
+                      'items-center justify-items-center',
+                    )}
+                  >
+                    <span className="label-large">{day.periodDisplay}</span>
+                    <Icon
+                      name={dayIcon}
+                      className="text-[3rem]"
+                    />
+                    <dl className="grid grid-cols-[auto_1fr] items-center gap-x-2">
+                      {(
+                        [
+                          ['High', day.high ?? '—', day.high != null ? '°' : ''],
+                          ['Low', day.low ?? '—', day.low != null ? '°' : ''],
+                          ...(day.pop != null ? [['POP', day.pop, '%']] : []),
+                        ] as [string, string | number, string][]
+                      ).map(([label, value, unit]) => (
+                        <React.Fragment key={label}>
+                          <dt className="label">{label}</dt>
+                          <dd>
+                            <ValueAndUnitPair
+                              value={value}
+                              unit={unit}
+                            />
+                          </dd>
+                        </React.Fragment>
+                      ))}
+                    </dl>
+                    <div
+                      className={twJoin(
+                        'col-span-3 h-6 w-full',
+                        'relative overflow-hidden',
+                        'bg-foreground/20',
+                      )}
+                      role="img"
+                      aria-label={`Temperature range ${day.low ?? '—'}° to ${day.high ?? '—'}°`}
+                    >
+                      <div
+                        className="absolute inset-y-0 left-0 bg-blue-500"
+                        style={{
+                          left: `${leftPct}%`,
+                          width: `${widthPct}%`,
+                        }}
+                      />
+                      {currentPct != null && (
+                        <div
+                          className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-blue-700"
+                          style={{ left: `${currentPct}%` }}
+                          aria-hidden
+                        />
+                      )}
+                    </div>
+                  </li>
+                )
+              })
+            })()}
           </ol>
         </section>
       </div>
