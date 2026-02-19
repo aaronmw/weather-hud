@@ -7,7 +7,7 @@ export const CANMORE_TZ = 'America/Edmonton'
 export const BURN_IN_ORBIT_RADIUS_PX = 5
 export const BURN_IN_ORBIT_DURATION_MS = 60_000
 
-export const FONT_AWESOME_ICON_STYLE = 'duotone-regular' as FontAwesomeIconStyle
+export const FONT_AWESOME_ICON_STYLE = 'classic-solid' as FontAwesomeIconStyle
 
 export type FontAwesomeIconStyle =
   | 'chisel'
