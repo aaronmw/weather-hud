@@ -3,6 +3,7 @@ export const DEFAULT_SITE_CODE = 's0000403'
 export const DEFAULT_PROVINCE = 'AB'
 export const CANMORE_LAT = 51.09
 export const CANMORE_LNG = -115.36
+export const CANMORE_TZ = 'America/Edmonton'
 export const BURN_IN_ORBIT_RADIUS_PX = 5
 export const BURN_IN_ORBIT_DURATION_MS = 60_000
 

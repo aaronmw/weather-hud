@@ -9,6 +9,7 @@ import {
   BURN_IN_ORBIT_RADIUS_PX,
   CANMORE_LAT,
   CANMORE_LNG,
+  CANMORE_TZ,
   FONT_AWESOME_ICON_STYLE,
   REFRESH_INTERVAL_MS,
 } from '@/lib/config'
@@ -70,7 +71,7 @@ export default function Home() {
   }, [lastSyncTime])
 
   const isNight = useMemo(() => {
-    const { sunrise, sunset } = getSunTimes(CANMORE_LAT, CANMORE_LNG, new Date(now))
+    const { sunrise, sunset } = getSunTimes(CANMORE_LAT, CANMORE_LNG, new Date(now), CANMORE_TZ)
     return now < sunrise.getTime() || now >= sunset.getTime()
   }, [now])
 

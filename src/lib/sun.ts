@@ -8,8 +8,20 @@ export interface SunTimes {
   sunset: Date
 }
 
-export function getSunTimes(lat: number, lng: number, date: Date): SunTimes {
-  const jd = toJulianDay(date)
+function dateInTimezone(date: Date, timeZone: string): Date {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const get = (type: string) => parseInt(parts.find(p => p.type === type)!.value, 10)
+  return new Date(Date.UTC(get('year'), get('month') - 1, get('day'), 12, 0, 0))
+}
+
+export function getSunTimes(lat: number, lng: number, date: Date, timeZone?: string): SunTimes {
+  const calcDate = timeZone ? dateInTimezone(date, timeZone) : date
+  const jd = toJulianDay(calcDate)
   const jc = (jd - 2451545) / 36525
 
   const geomMeanLongSun = (280.46646 + jc * (36000.76983 + 0.0003032 * jc)) % 360
@@ -51,7 +63,7 @@ export function getSunTimes(lat: number, lng: number, date: Date): SunTimes {
   const sunriseMinutes = (solarNoon - (hourAngle * 4) / 1440) * 1440
   const sunsetMinutes = (solarNoon + (hourAngle * 4) / 1440) * 1440
 
-  const dayStart = new Date(date)
+  const dayStart = new Date(calcDate)
   dayStart.setUTCHours(0, 0, 0, 0)
 
   return {
