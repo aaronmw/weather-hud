@@ -2,23 +2,11 @@
 
 import { Icon } from '@/components/Icon'
 import type { IconString } from '@/components/Icon/types'
-import { formatNumeric } from '@/lib/format'
-import { twJoin, twMerge } from 'tailwind-merge'
-
-const baseCellClass = twJoin(
-  'flex',
-  'flex-col',
-  'items-center',
-  'justify-center',
-  'px-6',
-  'border-foreground/20',
-  'gap-2',
-)
-
-const cellClass = twJoin(baseCellClass, 'border-b', 'border-r')
-const cellClassLastRow = twJoin(baseCellClass, 'border-r')
-
-const unitSpanClass = twJoin('unit', 'text-[1em]')
+import { twMerge } from 'tailwind-merge'
+import { DeltaCell } from './DeltaCell'
+import { DirectionCell } from './DirectionCell'
+import { cellClass } from './metric-cell-classes'
+import { ValueCell } from './ValueCell'
 
 type Column = 'condition' | 'wind' | 'uv'
 
@@ -33,6 +21,18 @@ const gridAreaMap: Record<Column, [string, string, string, string]> = {
   uv: ['ga-uv', 'ga-uv-current', 'ga-uv-high', 'ga-uv-low'],
 }
 
+type LowValue = string | number | { type: 'direction'; bearing: number | null }
+
+type HighValue = string | number | { type: 'delta'; value: number }
+
+function isDirectionLow(low: LowValue): low is { type: 'direction'; bearing: number | null } {
+  return typeof low === 'object' && low != null && 'type' in low && low.type === 'direction'
+}
+
+function isDeltaHigh(high: HighValue): high is { type: 'delta'; value: number } {
+  return typeof high === 'object' && high != null && 'type' in high && high.type === 'delta'
+}
+
 export function MetricColumn({
   column,
   icon,
@@ -44,50 +44,25 @@ export function MetricColumn({
   primary = false,
   spaceBeforeUnit = false,
   highlighted = false,
+  directionIcon,
 }: {
   column: Column
   icon: IconString
   caption: string
   unit?: string
   current: string | number
-  high: string | number
-  low: string | number
+  high: HighValue
+  low: LowValue
   primary?: boolean
   spaceBeforeUnit?: boolean
   highlighted?: boolean
+  directionIcon?: IconString
 }) {
   const valueClass = primary ? 'primary-value' : 'primary-value'
   const [gaHeader, gaCurrent, gaHigh, gaLow] = gridAreaMap[column]
-
   const highlightClass = highlighted ? 'highlighted' : ''
-  const valueCell = (
-    value: string | number,
-    ga: string,
-    opacityClass: string,
-    srLabel: string,
-    isLastRow: boolean,
-  ) => (
-    <div
-      className={twMerge(
-        isLastRow ? cellClassLastRow : cellClass,
-        ga,
-        highlightClass,
-      )}
-    >
-      <div className={opacityClass}>
-        <span className="sr-only">{srLabel}</span>
-        <span className={twMerge(valueClass, 'relative inline-block')}>
-          {formatNumeric(value)}
-          {unit != null && (
-            <span className={unitSpanClass}>
-              {spaceBeforeUnit ? ' ' : ''}
-              {unit}
-            </span>
-          )}
-        </span>
-      </div>
-    </div>
-  )
+  const srLabels: [string, string, string] =
+    column === 'wind' ? ['Current', 'Gust', 'Wind direction'] : ['Current', 'High', 'Low']
 
   return (
     <>
@@ -98,9 +73,62 @@ export function MetricColumn({
         />
         <span className="text-sm">{caption}</span>
       </div>
-      {valueCell(current, gaCurrent, '', 'Current', false)}
-      {valueCell(high, gaHigh, '', 'High', false)}
-      {valueCell(low, gaLow, '', 'Low', true)}
+      <ValueCell
+        value={current}
+        ga={gaCurrent}
+        opacityClass=""
+        srLabel={srLabels[0]}
+        isLastRow={false}
+        unit={unit}
+        spaceBeforeUnit={spaceBeforeUnit}
+        valueClass={valueClass}
+        highlightClass={highlightClass}
+      />
+      {isDeltaHigh(high) ? (
+        <DeltaCell
+          value={high.value}
+          ga={gaHigh}
+          srLabel={srLabels[1]}
+          unit={unit}
+          spaceBeforeUnit={spaceBeforeUnit}
+          valueClass={valueClass}
+          highlightClass={highlightClass}
+        />
+      ) : (
+        <ValueCell
+          value={high}
+          ga={gaHigh}
+          opacityClass=""
+          srLabel={srLabels[1]}
+          isLastRow={false}
+          unit={unit}
+          spaceBeforeUnit={spaceBeforeUnit}
+          valueClass={valueClass}
+          highlightClass={highlightClass}
+        />
+      )}
+      {isDirectionLow(low) ? (
+        <DirectionCell
+          bearing={low.bearing}
+          ga={gaLow}
+          srLabel={srLabels[2]}
+          directionIcon={directionIcon}
+          icon={icon}
+          highlightClass={highlightClass}
+        />
+      ) : (
+        <ValueCell
+          value={low}
+          ga={gaLow}
+          opacityClass=""
+          srLabel={srLabels[2]}
+          isLastRow
+          unit={unit}
+          spaceBeforeUnit={spaceBeforeUnit}
+          valueClass={valueClass}
+          highlightClass={highlightClass}
+        />
+      )}
     </>
   )
 }
