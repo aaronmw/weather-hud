@@ -40,11 +40,9 @@ html {
   @apply overflow-hidden;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: var(--color-dark);
-    --foreground: var(--color-light);
-  }
+[data-theme='dark'] {
+  --background: var(--color-dark);
+  --foreground: var(--color-light);
 }
 
 body {

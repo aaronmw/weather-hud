@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Noto_Sans_JP } from 'next/font/google'
 import Script from 'next/script'
+import { CanmoreThemeProvider } from '@/components/CanmoreThemeProvider'
 import './globals.css'
 
 const notoSansJP = Noto_Sans_JP({
@@ -20,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="light">
       <head>
         <Script
           crossOrigin="anonymous"
@@ -31,7 +32,7 @@ export default function RootLayout({
       <body
         className={`${notoSansJP.variable} antialiased`}
       >
-        {children}
+        <CanmoreThemeProvider>{children}</CanmoreThemeProvider>
       </body>
     </html>
   )
