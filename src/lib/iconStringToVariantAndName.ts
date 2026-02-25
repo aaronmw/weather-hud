@@ -1,4 +1,9 @@
-import type { IconName, IconString, IconVariant, WeatherIconName } from '@/components/Icon/types'
+import type {
+  IconName,
+  IconString,
+  IconVariant,
+  WeatherIconName,
+} from '@/components/Icon/types'
 
 export function iconStringToVariantAndName(
   iconString: IconString,
