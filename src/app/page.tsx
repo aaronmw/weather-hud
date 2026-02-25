@@ -110,7 +110,7 @@ export default function Home() {
                 : 'dark',
           )
         }
-        className="border-foreground/30 bg-background/80 fixed right-2 bottom-2 rounded border px-2 py-1 text-xs opacity-60 hover:opacity-100"
+        className="border-foreground/30 bg-background/80 fixed right-2 bottom-2 rounded border px-2 py-1 text-[16px] opacity-60 hover:opacity-100"
         aria-label={`Toggle theme (currently ${effectiveTheme})`}
       >
         {effectiveTheme}
@@ -182,7 +182,7 @@ export default function Home() {
       </div>
       {(data?.location || lastSyncedText) && (
         <div
-          className="absolute right-0 bottom-2 left-0 flex justify-center gap-2 text-xs opacity-30"
+          className="absolute right-0 bottom-2 left-0 flex justify-center gap-2 text-[16px] opacity-30"
           aria-live="polite"
         >
           {data?.location && <span>{data.location}</span>}
