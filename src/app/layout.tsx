@@ -20,7 +20,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" data-theme="light">
+    <html
+      lang="en"
+      data-theme="light"
+    >
       <head>
         <Script
           crossOrigin="anonymous"
@@ -28,11 +31,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body
-        className={`${notoSansJP.variable} antialiased`}
-      >
-        {children}
-      </body>
+      <body className={`${notoSansJP.variable} antialiased`}>{children}</body>
     </html>
   )
 }

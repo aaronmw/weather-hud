@@ -1,6 +1,9 @@
 'use client'
 
-import { FONT_AWESOME_ICON_STYLE, type FontAwesomeIconStyle } from '@/lib/config'
+import {
+  FONT_AWESOME_ICON_STYLE,
+  type FontAwesomeIconStyle,
+} from '@/lib/config'
 import {
   getFontAwesomeStyleClasses,
   getIconVariantForStyle,
@@ -14,7 +17,8 @@ function resolveStyleClasses(iconVariant: string | undefined): string {
   const style = FONT_AWESOME_ICON_STYLE
   if (iconVariant === 'brands') return 'fa-brands'
   if (!iconVariant) return getFontAwesomeStyleClasses(style)
-  if (iconVariant === 'duotone') return getFontAwesomeStyleClasses('duotone-solid')
+  if (iconVariant === 'duotone')
+    return getFontAwesomeStyleClasses('duotone-solid')
   if (iconVariant.startsWith('sharp-')) {
     return getFontAwesomeStyleClasses(
       `sharp-${iconVariant.replace('sharp-', '')}` as FontAwesomeIconStyle,

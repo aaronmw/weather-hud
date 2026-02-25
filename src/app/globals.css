@@ -102,88 +102,41 @@ body {
   @apply uppercase;
 }
 
-@utility weather-grid {
+@utility weather-strip-and-chart {
+  display: flex;
+  flex-direction: column;
+}
+
+@utility weather-strip {
   display: grid;
-  grid-template-columns: min-content 1.25fr 2fr 1fr 1.5fr;
-  grid-template-rows: auto 1fr 1fr 1fr 1fr;
-  grid-template-areas:
-    'labels-header condition-header wind-header uv-header forecast-header'
-    'labels-current condition wind uv forecast'
-    'labels-current condition-current wind-current uv-current forecast'
-    'labels-high condition-high wind-high uv-high forecast'
-    'labels-low condition-low wind-low uv-low forecast';
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: 1fr;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
-@utility ga-labels-header {
-  grid-area: labels-header;
-}
-@utility ga-condition-header {
-  grid-area: condition-header;
-}
-@utility ga-wind-header {
-  grid-area: wind-header;
-}
-@utility ga-uv-header {
-  grid-area: uv-header;
-}
-@utility ga-forecast-header {
-  grid-area: forecast-header;
-}
-@utility ga-labels-current {
-  grid-area: labels-current;
-}
-@utility ga-labels-high {
-  grid-area: labels-high;
-}
-@utility ga-labels-low {
-  grid-area: labels-low;
+@utility weather-strip-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  border-right: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent);
 }
 
-@utility vertical-label {
-  @apply label-large;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  transform: rotate(180deg);
+.weather-strip-cell:last-child {
+  border-right: none;
 }
 
-@utility ga-condition {
-  grid-area: condition;
-}
-@utility ga-condition-current {
-  grid-area: condition-current;
-}
-@utility ga-condition-high {
-  grid-area: condition-high;
-}
-@utility ga-condition-low {
-  grid-area: condition-low;
-}
-@utility ga-wind {
-  grid-area: wind;
-}
-@utility ga-wind-current {
-  grid-area: wind-current;
-}
-@utility ga-wind-high {
-  grid-area: wind-high;
-}
-@utility ga-wind-low {
-  grid-area: wind-low;
-}
-@utility ga-uv {
-  grid-area: uv;
-}
-@utility ga-uv-current {
-  grid-area: uv-current;
-}
-@utility ga-uv-high {
-  grid-area: uv-high;
-}
-@utility ga-uv-low {
-  grid-area: uv-low;
-}
-@utility ga-forecast {
-  grid-area: forecast;
+@utility weather-chart {
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent);
 }
 
 @keyframes burn-in-orbit {
