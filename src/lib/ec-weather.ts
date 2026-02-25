@@ -1,6 +1,6 @@
 import { XMLParser } from 'fast-xml-parser'
 
-import { CANMORE_TZ } from '@/lib/config'
+import { CANMORE_TZ, NUM_FORECASTED_HOURS } from '@/lib/config'
 
 const EC_BASE = 'https://dd.weather.gc.ca/today/citypage_weather'
 
@@ -362,7 +362,7 @@ export async function fetchWeather(
     })
   }
 
-  const hourlyForecast = parsedHourlies.slice(0, 12)
+  const hourlyForecast = parsedHourlies.slice(0, NUM_FORECASTED_HOURS)
 
   if (todayLocal) {
     const todayHours = parsedHourlies.filter(

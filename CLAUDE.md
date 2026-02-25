@@ -35,7 +35,7 @@ Weather HUD is a full-screen, ambient weather display for Canmore, Alberta. It r
 - Base font size is `text-[2vh]` on `html` — all sizing is viewport-height relative for fixed-screen display
 - Layout uses a CSS grid with named areas defined as `@utility weather-grid` in `globals.css`
 - Grid area classes follow `ga-{name}` naming (e.g., `ga-condition-header`, `ga-wind-current`)
-- Custom utility classes (`primary-value`, `secondary-value`, `label`, `unit`, etc.) are defined via `@utility` blocks in `globals.css`
+- Text uses two sizes: `text-big` and `text-small` (defined via `@utility` in `globals.css`)
 - Burn-in orbit animation (`burn-in-orbit` keyframes) is a core feature for OLED/CRT protection — do not remove
 
 ## Key Config (`src/lib/config.ts`)
@@ -50,4 +50,4 @@ Weather HUD is a full-screen, ambient weather display for Canmore, Alberta. It r
 - `prettier-plugin-tailwindcss` with `tailwindFunctions: ["twJoin", "twMerge"]`
 - Conventional Commits format (e.g., `feat(weather):`, `style(globals):`, `chore(config):`)
 - Unicode minus (`\u2212`) for negative numbers via `formatNumeric()` in `src/lib/format.ts`
-- `'use client'` on components that use hooks/browser APIs (`page.tsx`, `Icon.tsx`, `MetricColumn.tsx`)
+- `'use client'` on components that use hooks/browser APIs (`page.tsx`, `Icon.tsx`)

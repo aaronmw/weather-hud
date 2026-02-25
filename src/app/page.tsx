@@ -125,7 +125,7 @@ export default function Home() {
             className="flex min-h-screen w-full flex-col items-center justify-center"
             style={orbitStyle}
           >
-            <p className="text-red-600">Error: {error}</p>
+            <p className="text-big text-red-600">Error: {error}</p>
           </div>
         </main>
         {devThemeToggle}
@@ -141,7 +141,7 @@ export default function Home() {
             className="flex min-h-screen w-full flex-col items-center justify-center"
             style={orbitStyle}
           >
-            <p>Loading…</p>
+            <p className="text-big">Loading…</p>
           </div>
         </main>
         {devThemeToggle}
@@ -167,7 +167,7 @@ export default function Home() {
       >
         <section
           aria-label="Temperature outlook"
-          className="flex min-h-0 w-full flex-1"
+          className="flex min-h-0 w-full flex-1 overflow-visible"
         >
           <TemperatureCurveChart
             currentTemp={data.currentTemp}

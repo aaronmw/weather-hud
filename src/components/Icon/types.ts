@@ -38,6 +38,7 @@ export type IconVariant =
 export type WeatherIconName =
   | 'arrow-up'
   | 'bolt'
+  | 'clock'
   | 'cloud'
   | 'cloud-bolt'
   | 'cloud-rain'
@@ -47,4 +48,5 @@ export type WeatherIconName =
   | 'plus'
   | 'snowflake'
   | 'sun'
+  | 'temperature-half'
   | 'wind'
