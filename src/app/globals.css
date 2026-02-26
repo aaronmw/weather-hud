@@ -32,6 +32,12 @@
   @apply font-black;
 }
 
+@utility text-huge {
+  @apply text-[4.5rem];
+  @apply leading-[1em];
+  @apply font-black;
+}
+
 @utility text-small {
   @apply text-[2rem];
   @apply leading-[1em];
