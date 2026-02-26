@@ -1,6 +1,5 @@
 'use client'
 
-import type { ReactNode } from 'react'
 import { Icon } from '@/components/Icon'
 import {
   CANMORE_TZ,
@@ -10,7 +9,6 @@ import {
   CHART_INSET_TOP,
   NUM_FORECASTED_HOURS,
 } from '@/lib/config'
-import { getConditionIcon } from '@/lib/condition-icons'
 import type { HourlyForecast } from '@/lib/ec-weather'
 import { degreesToCardinal, formatNumeric } from '@/lib/format'
 import { twJoin } from 'tailwind-merge'
@@ -111,10 +109,6 @@ export function TemperatureCurveChart({
     }),
   ].slice(0, numHours)
 
-  const hasPop = labelData.some((d) => (d.popNum ?? 0) > 0)
-  const hasWind = labelData.some((d) => d.windNum > 0)
-  const numBottomRows = 1 + (hasPop ? 1 : 0) + (hasWind ? 1 : 0)
-
   return (
     <div
       className="relative mx-auto flex h-full w-screen flex-col overflow-visible"
@@ -170,105 +164,75 @@ export function TemperatureCurveChart({
                   'border-t',
                 )}
               >
-                {isTopOfBar && label && (
-                  <span
-                    className={twJoin(
-                      'inverted',
-                      'flex',
-                      'w-full',
-                      'flex-col',
-                      'items-center',
-                      'gap-0.5',
-                      'rounded-lg',
-                      'p-2',
-                      'mx-1',
-                      'text-big -translate-y-1/2',
-                    )}
-                  >
-                    <Icon name={getConditionIcon(label.iconCode)} />
-                    {formatNumeric(label.temp)}°
-                  </span>
-                )}
+                {isTopOfBar &&
+                  label &&
+                  (() => {
+                    const hasConditional =
+                      (label.popNum ?? 0) > 0 || label.windNum > 0
+                    return (
+                      <div className="relative mx-1 w-full -translate-y-1/2">
+                        <div
+                          className={twJoin(
+                            'inverted text-huge flex items-center justify-center px-2 py-3',
+                            hasConditional ? 'rounded-t-lg' : 'rounded-lg',
+                          )}
+                        >
+                          {formatNumeric(label.temp)}°
+                        </div>
+                        {hasConditional && (
+                          <div className="absolute inset-x-0 top-full flex flex-col overflow-hidden rounded-b-lg">
+                            {(label.popNum ?? 0) > 0 && (
+                              <div className="flex items-center justify-center bg-blue-700 px-2 py-1 text-small leading-tight text-blue-100">
+                                {label.pop}
+                              </div>
+                            )}
+                            {label.windNum > 0 && (
+                              <div
+                                className={twJoin(
+                                  'flex items-center justify-center px-2 py-1 text-small leading-tight',
+                                  label.windNum > 30
+                                    ? 'bg-red-700 text-red-100'
+                                    : 'inverted',
+                                )}
+                              >
+                                {label.wind}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
               </div>
             )
           }),
         )}
       </div>
       <div
-        className="text-small mt-4 grid shrink-0 place-items-center gap-x-0 gap-y-3"
+        className="text-small mt-4 grid shrink-0 place-items-center gap-x-0"
         style={{
           gridTemplateColumns: `4.5rem repeat(${numHours}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${numBottomRows}, auto)`,
-          gridAutoFlow: 'column',
         }}
         aria-hidden
       >
         <div className="flex w-18 items-center justify-center py-1 text-center">
           <Icon name="clock" />
         </div>
-        {hasPop && (
-          <div className="flex w-18 items-center justify-center py-1 text-center">
-            <Icon name="droplet" />
-          </div>
-        )}
-        {hasWind && (
-          <div className="flex w-18 items-center justify-center py-1 text-center">
-            <Icon name="wind" />
-          </div>
-        )}
-        {labelData.flatMap((d) => {
-          const items: ReactNode[] = [
-            <div
-              key={`${d.key}-time`}
-              className="flex w-full items-center justify-center"
+        {labelData.map((d) => (
+          <div
+            key={d.key}
+            className="flex w-full items-center justify-center"
+          >
+            <span
+              className={twJoin(
+                'mx-1 min-w-0 flex-1 py-1 text-center',
+                d.isToday && 'font-bold',
+              )}
             >
-              <span
-                className={twJoin(
-                  'mx-1 min-w-0 flex-1 py-1 text-center',
-                  d.isToday && 'font-bold',
-                )}
-              >
-                {d.time}
-              </span>
-            </div>,
-          ]
-          if (hasPop) {
-            items.push(
-              <div
-                key={`${d.key}-pop`}
-                className="flex w-full items-center justify-center"
-              >
-                <span
-                  className={twJoin(
-                    'mx-1 min-w-0 flex-1 py-1 text-center',
-                    (d.popNum ?? 0) > 0 && 'rounded bg-blue-700 text-blue-100',
-                    d.popNum === 0 && 'opacity-0',
-                  )}
-                >
-                  {d.pop ?? '—'}
-                </span>
-              </div>,
-            )
-          }
-          if (hasWind) {
-            items.push(
-              <div
-                key={`${d.key}-wind`}
-                className="flex w-full items-center justify-center"
-              >
-                <span
-                  className={twJoin(
-                    'mx-1 min-w-0 flex-1 py-1 text-center',
-                    d.windNum > 30 && 'rounded bg-red-700 text-red-100',
-                  )}
-                >
-                  {d.wind}
-                </span>
-              </div>,
-            )
-          }
-          return items
-        })}
+              {d.time}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   )
