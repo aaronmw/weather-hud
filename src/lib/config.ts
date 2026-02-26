@@ -8,10 +8,10 @@ export const BURN_IN_ORBIT_RADIUS_PX = 5
 export const BURN_IN_ORBIT_DURATION_MS = 60_000
 export const NUM_FORECASTED_HOURS = 8
 
-export const CHART_INSET_TOP = 100
-export const CHART_INSET_RIGHT = 50
-export const CHART_INSET_BOTTOM = 50
-export const CHART_INSET_LEFT = 50
+export const CHART_INSET_TOP = '10vh'
+export const CHART_INSET_RIGHT = '10vh'
+export const CHART_INSET_BOTTOM = '10vh'
+export const CHART_INSET_LEFT = '5vh'
 
 export const SCALE_FACTOR_FOR_NOW = 2.5
 export const SCALE_FACTOR_FOR_OTHERS = 1.5
