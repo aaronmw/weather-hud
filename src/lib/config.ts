@@ -6,12 +6,12 @@ export const CANMORE_LNG = -115.36
 export const CANMORE_TZ = 'America/Edmonton'
 export const BURN_IN_ORBIT_RADIUS_PX = 5
 export const BURN_IN_ORBIT_DURATION_MS = 60_000
-export const NUM_FORECASTED_HOURS = 8
+export const NUM_FORECASTED_HOURS = 6
 
-export const CHART_INSET_TOP = '10vh'
-export const CHART_INSET_RIGHT = '10vh'
-export const CHART_INSET_BOTTOM = '10vh'
-export const CHART_INSET_LEFT = '5vh'
+export const CHART_INSET_TOP = '15vh'
+export const CHART_INSET_RIGHT = '5vh'
+export const CHART_INSET_BOTTOM = '5vh'
+export const CHART_INSET_LEFT = '2.5vh'
 
 export const CHART_SCALE_PADDING_BELOW = 2
 
