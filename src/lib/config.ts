@@ -13,6 +13,8 @@ export const CHART_INSET_RIGHT = '10vh'
 export const CHART_INSET_BOTTOM = '10vh'
 export const CHART_INSET_LEFT = '5vh'
 
+export const CHART_SCALE_PADDING_BELOW = 2
+
 export const SCALE_FACTOR_FOR_NOW = 2.5
 export const SCALE_FACTOR_FOR_OTHERS = 1.5
 

@@ -7,6 +7,7 @@ import {
   CHART_INSET_LEFT,
   CHART_INSET_RIGHT,
   CHART_INSET_TOP,
+  CHART_SCALE_PADDING_BELOW,
   NUM_FORECASTED_HOURS,
 } from '@/lib/config'
 import type { HourlyForecast } from '@/lib/ec-weather'
@@ -66,7 +67,7 @@ export function TemperatureCurveChart({
   const minTemp = Math.min(...temps)
   const maxTemp = Math.max(...temps)
   const range = maxTemp - minTemp
-  const scaleMin = range === 0 ? minTemp - 1 : minTemp
+  const scaleMin = minTemp - CHART_SCALE_PADDING_BELOW
   const scaleMax = range === 0 ? maxTemp + 1 : maxTemp
   const rowTemps = Array.from(
     { length: scaleMax - scaleMin + 1 },
