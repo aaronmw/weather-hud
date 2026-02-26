@@ -39,13 +39,8 @@ function formatTime(utc: Date | string): string {
 function formatWind(
   speed: number,
   direction: number | null,
-): { wind: string; windNum: number } {
-  const windNum = speed
-  const dir = direction != null ? degreesToCardinal(direction) : ''
-  const wind = dir
-    ? `${formatNumeric(windNum)} ${dir}`
-    : `${formatNumeric(windNum)}`
-  return { wind, windNum }
+): { windNum: number; windDirection: number | null } {
+  return { windNum: speed, windDirection: direction }
 }
 
 export function TemperatureCurveChart({
@@ -87,8 +82,8 @@ export function TemperatureCurveChart({
       iconCode: currentIconCode ?? hourlyForecast[0]?.iconCode ?? '00',
       pop: nowPop != null ? `${formatNumeric(nowPop)}%` : null,
       popNum: nowPop,
-      wind: nowWindFmt.wind,
       windNum: nowWindFmt.windNum,
+      windDirection: nowWindFmt.windDirection,
       isToday: true,
     },
     ...hourlyForecast.slice(0, NUM_FORECASTED_HOURS).map((h, i) => {
@@ -103,8 +98,8 @@ export function TemperatureCurveChart({
         iconCode: h.iconCode,
         pop: h.pop != null ? `${formatNumeric(h.pop)}%` : null,
         popNum: h.pop,
-        wind: windFmt.wind,
         windNum: windFmt.windNum,
+        windDirection: windFmt.windDirection,
         isToday: false,
       }
     }),
@@ -123,7 +118,7 @@ export function TemperatureCurveChart({
       <div
         className="grid min-h-0 flex-1 gap-x-0 overflow-visible"
         style={{
-          gridTemplateColumns: `4.5rem repeat(${numHours}, minmax(0, 1fr))`,
+          gridTemplateColumns: `4.5rem 2fr repeat(${numHours - 1}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${numRows - 1}, minmax(0, 1fr)) auto`,
         }}
         aria-label={`Temperature outlook: current and next ${NUM_FORECASTED_HOURS} hours`}
@@ -171,32 +166,61 @@ export function TemperatureCurveChart({
                     const hasConditional =
                       (label.popNum ?? 0) > 0 || label.windNum > 0
                     return (
-                      <div className="relative mx-1 w-full -translate-y-1/2">
+                      <div
+                        className={twJoin(
+                          'relative w-full -translate-y-1/2',
+                          label.isToday ? 'mx-2' : 'mx-1',
+                        )}
+                      >
                         <div
                           className={twJoin(
-                            'inverted text-huge flex items-center justify-center px-2 py-3',
-                            hasConditional ? 'rounded-t-lg' : 'rounded-lg',
+                            'inverted flex items-center justify-center',
+                            label.isToday
+                              ? 'px-4 py-6 text-[9rem] leading-[1em] font-black'
+                              : 'text-huge px-2 py-3',
+                            hasConditional ? 'rounded-t-2xl' : 'rounded-2xl',
                           )}
                         >
                           {formatNumeric(label.temp)}°
                         </div>
                         {hasConditional && (
-                          <div className="absolute inset-x-0 top-full flex flex-col overflow-hidden rounded-b-lg">
+                          <div className="absolute inset-x-0 top-full flex flex-col overflow-hidden rounded-b-2xl">
                             {(label.popNum ?? 0) > 0 && (
-                              <div className="flex items-center justify-center bg-blue-700 px-2 py-1 text-small leading-tight text-blue-100">
+                              <div
+                                className={twJoin(
+                                  'flex items-center justify-center bg-blue-700 leading-tight text-blue-100',
+                                  label.isToday
+                                    ? 'px-4 py-2 text-[4rem] font-black'
+                                    : 'text-small px-2 py-1',
+                                )}
+                              >
                                 {label.pop}
                               </div>
                             )}
                             {label.windNum > 0 && (
                               <div
                                 className={twJoin(
-                                  'flex items-center justify-center px-2 py-1 text-small leading-tight',
+                                  'flex items-center justify-center gap-1 leading-tight',
+                                  label.isToday
+                                    ? 'px-4 py-2 text-[4rem] font-black'
+                                    : 'text-small px-2 py-1',
                                   label.windNum > 30
                                     ? 'bg-red-700 text-red-100'
                                     : 'inverted',
                                 )}
                               >
-                                {label.wind}
+                                {formatNumeric(label.windNum)}
+                                {label.windDirection != null && (
+                                  <span
+                                    className="inline-block"
+                                    style={{
+                                      transform: `rotate(${label.windDirection}deg)`,
+                                    }}
+                                    aria-label={`From ${degreesToCardinal(label.windDirection)}`}
+                                  >
+                                    <Icon name="arrow-up" />
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>
@@ -212,7 +236,7 @@ export function TemperatureCurveChart({
       <div
         className="text-small mt-4 grid shrink-0 place-items-center gap-x-0"
         style={{
-          gridTemplateColumns: `4.5rem repeat(${numHours}, minmax(0, 1fr))`,
+          gridTemplateColumns: `4.5rem 2fr repeat(${numHours - 1}, minmax(0, 1fr))`,
         }}
         aria-hidden
       >
