@@ -5,6 +5,7 @@
   --color-dark: #000000;
   --background: var(--color-light);
   --foreground: var(--color-dark);
+  --label-bg: #ffffff;
 }
 
 @theme inline {
@@ -53,6 +54,7 @@ html {
 [data-theme='dark'] {
   --background: var(--color-dark);
   --foreground: var(--color-light);
+  --label-bg: #000000;
 }
 
 body {
