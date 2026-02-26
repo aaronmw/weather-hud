@@ -160,8 +160,8 @@ export default function Home() {
     >
       <div
         className={twJoin(
-          'weather-strip-and-chart flex flex-1 flex-col',
-          'h-full w-full',
+          'weather-strip-and-chart flex min-h-0 flex-1 flex-col',
+          'w-full',
         )}
         style={orbitStyle}
       >
@@ -182,7 +182,7 @@ export default function Home() {
       </div>
       {(data?.location || lastSyncedText) && (
         <div
-          className="absolute right-0 bottom-2 left-0 flex justify-center gap-2 text-[16px] opacity-30"
+          className="absolute right-0 bottom-4 left-0 flex justify-center gap-2 text-[16px] opacity-30"
           aria-live="polite"
         >
           {data?.location && <span>{data.location}</span>}
