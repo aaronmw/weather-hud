@@ -1,4 +1,4 @@
-const MINUS = '\u2212'
+const MINUS = '\u2013'
 
 const CARDINALS = [
   'N',
