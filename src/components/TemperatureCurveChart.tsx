@@ -311,13 +311,11 @@ export function TemperatureCurveChart({
         className={twJoin(
           'flex w-full flex-col items-center justify-center overflow-hidden',
           label.isToday ? 'mx-0' : 'mx-0',
-          'rounded-2xl',
+          'rounded-2xl border-4 border-foreground',
         )}
-        style={{ backgroundColor: '#000' }}
       >
         <div
           className={twJoin(
-            'inverted',
             'flex w-full items-center justify-center',
             label.isToday
               ? 'px-4 py-6 text-[9rem] leading-[1em] font-black'
@@ -327,11 +325,16 @@ export function TemperatureCurveChart({
           {formatNumeric(label.temp)}°
         </div>
         {hasConditional && (
-          <div className="flex w-full flex-col overflow-hidden">
+          <div
+            className={twJoin('flex', 'w-full', 'flex-col', 'overflow-hidden')}
+          >
             {(label.popNum ?? 0) > 0 && (
               <div
                 className={twJoin(
-                  'flex items-center justify-center leading-tight text-blue-100',
+                  'flex items-center justify-center leading-tight',
+                  (label.popNum ?? 0) >= 50
+                    ? 'text-blue-100'
+                    : 'text-blue-900 dark:text-blue-100',
                   label.isToday
                     ? 'px-4 py-2 text-[4rem] font-black'
                     : 'text-small px-2 py-1',
@@ -351,8 +354,10 @@ export function TemperatureCurveChart({
                     ? 'px-4 py-2 text-[4rem] font-black'
                     : 'text-small px-2 py-1',
                   windIntensityPct(label.windNum) > 0
-                    ? 'text-red-100'
-                    : 'inverted',
+                    ? windIntensityPct(label.windNum) >= 50
+                      ? 'text-red-100'
+                      : 'text-red-900 dark:text-red-100'
+                    : '',
                 )}
                 style={
                   windIntensityPct(label.windNum) > 0
