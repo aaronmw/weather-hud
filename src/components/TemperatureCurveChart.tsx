@@ -9,6 +9,7 @@ import {
   CHART_INSET_LEFT,
   CHART_INSET_RIGHT,
   CHART_INSET_TOP,
+  LABEL_OPACITY_STEP_PCT,
   NUM_FORECASTED_HOURS,
   WIND_THRESHOLD_HIGH_KMH,
   WIND_THRESHOLD_LOW_KMH,
@@ -310,9 +311,14 @@ export function TemperatureCurveChart({
         }
         className={twJoin(
           'flex w-full flex-col items-center justify-center overflow-hidden',
-          label.isToday ? 'mx-0' : 'mx-0',
-          'rounded-2xl border-4 border-foreground',
+          'border-foreground',
+          label.isToday
+            ? ['mx-0', 'border-16', 'rounded-4xl']
+            : ['mx-0', 'border-12', 'rounded-2xl'],
         )}
+        style={{
+          opacity: Math.max(0, (100 - index * LABEL_OPACITY_STEP_PCT) / 100),
+        }}
       >
         <div
           className={twJoin(
@@ -410,10 +416,13 @@ export function TemperatureCurveChart({
           }}
           aria-hidden
         >
-          {labelData.map((d) => (
+          {labelData.map((d, i) => (
             <div
               key={d.key}
               className="flex w-full items-center justify-center"
+              style={{
+                opacity: Math.max(0, (100 - i * LABEL_OPACITY_STEP_PCT) / 100),
+              }}
             >
               <span
                 className={twJoin(

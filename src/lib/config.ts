@@ -16,6 +16,7 @@ export const CHART_INSET_RIGHT = '3vh'
 export const CHART_INSET_BOTTOM = '3vh'
 export const CHART_INSET_LEFT = '3vh'
 export const CHART_GAP_X = 8
+export const LABEL_OPACITY_STEP_PCT = 15
 
 export const CHART_SCALE_PADDING_BELOW = 2
 export const CHART_Y_BOTTOM_MARGIN_RATIO = 0.2
