@@ -47,12 +47,12 @@ export const WeatherConditionCard = forwardRef<
         'items-center',
         'justify-center',
         'overflow-hidden',
-        'border-foreground mx-0 border-12',
-        'bg-background',
+        'bg-background mx-0 p-[6px]',
       )}
       style={{
         opacity,
         borderRadius: `${WEATHER_CARD_BORDER_RADIUS_PX}px`,
+        boxShadow: `inset 0 0 0 6px var(--foreground), 0 0 0 6px var(--foreground), 0 0 0 6px var(--background)`,
       }}
     >
       <div

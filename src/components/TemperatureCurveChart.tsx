@@ -11,9 +11,12 @@ import {
   CHART_INSET_TOP,
   CHART_TIME_ROW_HEIGHT_PX,
   CHART_TIME_ROW_PADDING_V_PX,
+  CHART_TOP_RESERVE_PX,
   LABEL_OPACITY_STEP_PCT,
   NUM_FORECASTED_HOURS,
+  FREEZE_ZONE_CLASSES,
   WEATHER_CARD_BORDER_RADIUS_PX,
+  WEATHER_CARD_BORDER_RING_PX,
 } from '@/lib/config'
 import type { HourlyForecast } from '@/lib/ec-weather'
 import { formatNumeric } from '@/lib/format'
@@ -114,12 +117,27 @@ function computeLayout(
   return { kMax, contentTop, contentBottom }
 }
 
+function gapAfterColumn(
+  index: number,
+  baseGap: number,
+  ringPx: number,
+  nowScale: number,
+): number {
+  const rightOverflow = index === 0 ? ringPx * nowScale : ringPx
+  return baseGap + rightOverflow + ringPx
+}
+
 function getColumnLayout(
   chartWidth: number,
   numCols: number,
-  gapX: number,
+  baseGap: number,
+  ringPx: number,
+  nowScale: number,
 ): { x: number; width: number }[] {
-  const totalGap = (numCols - 1) * gapX
+  let totalGap = 0
+  for (let i = 0; i < numCols - 1; i++) {
+    totalGap += gapAfterColumn(i, baseGap, ringPx, nowScale)
+  }
   const contentWidth = chartWidth - totalGap
   const totalFr = 2 + (numCols - 1)
   const result: { x: number; width: number }[] = []
@@ -127,7 +145,7 @@ function getColumnLayout(
   for (let i = 0; i < numCols; i++) {
     const w = ((i === 0 ? 2 : 1) / totalFr) * contentWidth
     result.push({ x, width: w })
-    x += w + gapX
+    if (i < numCols - 1) x += w + gapAfterColumn(i, baseGap, ringPx, nowScale)
   }
   return result
 }
@@ -305,7 +323,13 @@ export function TemperatureCurveChart({
   const firstHeight = layout?.cardDims[0]?.height ?? 0
   const firstTemp = labelData[0]?.temp ?? 0
   const columns = layout
-    ? getColumnLayout(layout.chartWidth, labelData.length, CHART_GAP_X)
+    ? getColumnLayout(
+        layout.chartWidth,
+        labelData.length,
+        CHART_GAP_X,
+        WEATHER_CARD_BORDER_RING_PX,
+        NOW_CARD_SCALE,
+      )
     : []
 
   function renderCard(label: LabelDatum, forMeasure: boolean, index: number) {
@@ -358,7 +382,8 @@ export function TemperatureCurveChart({
               CHART_TIME_ROW_HEIGHT_PX + 2 * CHART_TIME_ROW_PADDING_V_PX,
             paddingTop: CHART_TIME_ROW_PADDING_V_PX,
             paddingBottom: CHART_TIME_ROW_PADDING_V_PX,
-            marginBottom: CHART_TIME_ROW_PADDING_V_PX,
+            marginBottom:
+              CHART_TIME_ROW_PADDING_V_PX + CHART_TOP_RESERVE_PX,
           }}
           aria-hidden
         >
@@ -463,17 +488,24 @@ export function TemperatureCurveChart({
                         i === 0
                           ? WEATHER_CARD_BORDER_RADIUS_PX * NOW_CARD_SCALE
                           : WEATHER_CARD_BORDER_RADIUS_PX
-                      const cutoutX = layout.chartRectLeft + col.x
-                      const cutoutY = offsetY - layout.zeroLineY
+                      const cutoutX =
+                        layout.chartRectLeft + col.x - WEATHER_CARD_BORDER_RING_PX
+                      const cutoutY =
+                        offsetY - layout.zeroLineY - WEATHER_CARD_BORDER_RING_PX
+                      const cutoutW =
+                        col.width + 2 * WEATHER_CARD_BORDER_RING_PX
+                      const cutoutH =
+                        cardHeight + 2 * WEATHER_CARD_BORDER_RING_PX
+                      const cutoutRx = cardRadius + WEATHER_CARD_BORDER_RING_PX
                       return (
                         <rect
                           key={labelData[i].key}
                           x={cutoutX}
                           y={cutoutY}
-                          width={col.width}
-                          height={cardHeight}
-                          rx={cardRadius}
-                          ry={cardRadius}
+                          width={cutoutW}
+                          height={cutoutH}
+                          rx={cutoutRx}
+                          ry={cutoutRx}
                           fill="black"
                         />
                       )
@@ -482,7 +514,7 @@ export function TemperatureCurveChart({
                 </defs>
               </svg>
               <div
-                className="pointer-events-none absolute bg-sky-400/5"
+                className={FREEZE_ZONE_CLASSES}
                 style={{
                   top: freezeTintBandTop,
                   left: -layout.chartRectLeft,
