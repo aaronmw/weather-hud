@@ -37,6 +37,15 @@ export const WeatherConditionCard = forwardRef<
 ) {
   const hasConditional = (popNum ?? 0) > 0 || windNum > 0
   const windPct = windIntensityPct(windNum)
+  const popVal = popNum ?? 0
+  const popActive = popVal > 0
+  const popBorderClass = popActive
+    ? popVal >= 50
+      ? '[--pop-border:rgb(219_234_254)]'
+      : '[--pop-border:rgb(30_58_138)] dark:[--pop-border:rgb(219_234_254)]'
+    : ''
+  const popTextClass =
+    popVal >= 50 ? 'text-blue-100' : 'text-blue-900 dark:text-blue-100'
   return (
     <div
       ref={ref}
@@ -48,17 +57,26 @@ export const WeatherConditionCard = forwardRef<
         'justify-center',
         'overflow-hidden',
         'bg-background mx-0 p-[6px]',
+        popBorderClass,
       )}
       style={{
         opacity,
         borderRadius: `${WEATHER_CARD_BORDER_RADIUS_PX}px`,
-        boxShadow: `inset 0 0 0 6px var(--foreground), 0 0 0 6px var(--foreground), 0 0 0 6px var(--background)`,
+        boxShadow: popActive
+          ? `inset 0 0 0 6px var(--pop-border), 0 0 0 6px var(--pop-border), 0 0 0 6px var(--background)`
+          : `inset 0 0 0 6px var(--foreground), 0 0 0 6px var(--foreground), 0 0 0 6px var(--background)`,
       }}
     >
       <div
         className={twJoin(
           'text-huge flex w-full items-center justify-center px-2 py-3',
+          popActive && popTextClass,
         )}
+        style={
+          popActive
+            ? { backgroundColor: `rgb(29 78 216 / ${popVal}%)` }
+            : undefined
+        }
       >
         {formatNumeric(temp)}°
       </div>
@@ -66,16 +84,14 @@ export const WeatherConditionCard = forwardRef<
         <div
           className={twJoin('flex', 'w-full', 'flex-col', 'overflow-hidden')}
         >
-          {(popNum ?? 0) > 0 && (
+          {popActive && (
             <div
               className={twJoin(
                 'text-small flex items-center justify-center px-2 py-1 leading-tight',
-                (popNum ?? 0) >= 50
-                  ? 'text-blue-100'
-                  : 'text-blue-900 dark:text-blue-100',
+                popTextClass,
               )}
               style={{
-                backgroundColor: `rgb(29 78 216 / ${popNum}%)`,
+                backgroundColor: `rgb(29 78 216 / ${popVal}%)`,
               }}
             >
               {pop}

@@ -92,8 +92,7 @@ function computeLayout(
       const offsetY =
         i === 0 ? 0 : -firstHeight * k * (labelData[i].temp - firstTemp)
       const top = offsetY
-      const bottom =
-        offsetY + (i === 0 ? nowCardHeight : cardDims[i].height)
+      const bottom = offsetY + (i === 0 ? nowCardHeight : cardDims[i].height)
       contentTop = Math.min(contentTop, top)
       contentBottom = Math.max(contentBottom, bottom)
     }
@@ -378,12 +377,10 @@ export function TemperatureCurveChart({
         <div
           className="flex shrink-0 items-center"
           style={{
-            height:
-              CHART_TIME_ROW_HEIGHT_PX + 2 * CHART_TIME_ROW_PADDING_V_PX,
+            height: CHART_TIME_ROW_HEIGHT_PX + 2 * CHART_TIME_ROW_PADDING_V_PX,
             paddingTop: CHART_TIME_ROW_PADDING_V_PX,
             paddingBottom: CHART_TIME_ROW_PADDING_V_PX,
-            marginBottom:
-              CHART_TIME_ROW_PADDING_V_PX + CHART_TOP_RESERVE_PX,
+            marginBottom: CHART_TIME_ROW_PADDING_V_PX + CHART_TOP_RESERVE_PX,
           }}
           aria-hidden
         >
@@ -489,7 +486,9 @@ export function TemperatureCurveChart({
                           ? WEATHER_CARD_BORDER_RADIUS_PX * NOW_CARD_SCALE
                           : WEATHER_CARD_BORDER_RADIUS_PX
                       const cutoutX =
-                        layout.chartRectLeft + col.x - WEATHER_CARD_BORDER_RING_PX
+                        layout.chartRectLeft +
+                        col.x -
+                        WEATHER_CARD_BORDER_RING_PX
                       const cutoutY =
                         offsetY - layout.zeroLineY - WEATHER_CARD_BORDER_RING_PX
                       const cutoutW =
@@ -506,7 +505,7 @@ export function TemperatureCurveChart({
                           height={cutoutH}
                           rx={cutoutRx}
                           ry={cutoutRx}
-                          fill="black"
+                          fill="var(--mask-cutout)"
                         />
                       )
                     })}
@@ -558,7 +557,7 @@ export function TemperatureCurveChart({
                       <div
                         className={twJoin(
                           'origin-top-left',
-                          i === 0 && 'scale-200 w-1/2',
+                          i === 0 && 'w-1/2 scale-200',
                         )}
                       >
                         {renderCard(label, false, i)}
