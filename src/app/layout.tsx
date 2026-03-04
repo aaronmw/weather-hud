@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
-import { Noto_Sans_JP } from 'next/font/google'
+import { Barlow_Condensed } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 
-const notoSansJP = Noto_Sans_JP({
+const barlowCondensed = Barlow_Condensed({
   variable: '--font-body',
   subsets: ['latin'],
-  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+  weight: ['400', '600', '700'],
 })
 
 export const metadata: Metadata = {
@@ -31,7 +31,9 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className={`${notoSansJP.variable} antialiased`}>{children}</body>
+      <body className={`${barlowCondensed.variable} antialiased`}>
+        {children}
+      </body>
     </html>
   )
 }
