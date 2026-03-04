@@ -9,6 +9,9 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@fontsource/cascadia-mono": "^5.2.3",
+    "@fontsource/dm-mono": "^5.2.7",
+    "@fontsource/inconsolata": "^5.2.8",
     "fast-xml-parser": "^5.3.6",
     "next": "16.1.6",
     "react": "19.2.3",
