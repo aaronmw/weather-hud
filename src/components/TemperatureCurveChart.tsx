@@ -1,7 +1,7 @@
 'use client'
 
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Icon } from '@/components/Icon'
+import { WeatherConditionCard } from '@/components/WeatherConditionCard'
 import {
   CANMORE_TZ,
   CHART_GAP_X,
@@ -9,19 +9,21 @@ import {
   CHART_INSET_LEFT,
   CHART_INSET_RIGHT,
   CHART_INSET_TOP,
+  CHART_TIME_ROW_HEIGHT_PX,
+  CHART_TIME_ROW_PADDING_V_PX,
   LABEL_OPACITY_STEP_PCT,
   NUM_FORECASTED_HOURS,
-  WIND_THRESHOLD_HIGH_KMH,
-  WIND_THRESHOLD_LOW_KMH,
+  WEATHER_CARD_BORDER_RADIUS_PX,
 } from '@/lib/config'
 import type { HourlyForecast } from '@/lib/ec-weather'
-import { degreesToCardinal, formatNumeric } from '@/lib/format'
+import { formatNumeric } from '@/lib/format'
 import { twJoin } from 'tailwind-merge'
 
 const SPARK_PATH_STROKE_WIDTH = 10
 const SPARK_VIEWBOX_PADDING = SPARK_PATH_STROKE_WIDTH / 2
 const K_MAX_ITERATIONS = 20
 const K_EPS = 1e-3
+const NOW_CARD_SCALE = 2
 
 interface LabelDatum {
   key: number
@@ -64,16 +66,6 @@ function formatWind(
   return { windNum: speed, windDirection: direction }
 }
 
-function windIntensityPct(kmh: number): number {
-  if (kmh < WIND_THRESHOLD_LOW_KMH) return 0
-  if (kmh >= WIND_THRESHOLD_HIGH_KMH) return 100
-  return (
-    5 +
-    ((kmh - WIND_THRESHOLD_LOW_KMH) * (100 - 5)) /
-      (WIND_THRESHOLD_HIGH_KMH - WIND_THRESHOLD_LOW_KMH)
-  )
-}
-
 function computeLayout(
   chartHeight: number,
   cardDims: { width: number; height: number }[],
@@ -88,6 +80,7 @@ function computeLayout(
   )
   let kLo = 0
   let kHi = (chartHeight / firstHeight / tempRange) * 2
+  const nowCardHeight = (cardDims[0]?.height ?? 0) * NOW_CARD_SCALE
   for (let iter = 0; iter < K_MAX_ITERATIONS; iter++) {
     const k = (kLo + kHi) / 2
     let contentTop = 0
@@ -96,7 +89,8 @@ function computeLayout(
       const offsetY =
         i === 0 ? 0 : -firstHeight * k * (labelData[i].temp - firstTemp)
       const top = offsetY
-      const bottom = offsetY + cardDims[i].height
+      const bottom =
+        offsetY + (i === 0 ? nowCardHeight : cardDims[i].height)
       contentTop = Math.min(contentTop, top)
       contentBottom = Math.max(contentBottom, bottom)
     }
@@ -112,7 +106,10 @@ function computeLayout(
     const offsetY =
       i === 0 ? 0 : -firstHeight * kMax * (labelData[i].temp - firstTemp)
     contentTop = Math.min(contentTop, offsetY)
-    contentBottom = Math.max(contentBottom, offsetY + cardDims[i].height)
+    contentBottom = Math.max(
+      contentBottom,
+      offsetY + (i === 0 ? nowCardHeight : cardDims[i].height),
+    )
   }
   return { kMax, contentTop, contentBottom }
 }
@@ -167,7 +164,7 @@ export function TemperatureCurveChart({
       ? `M ${sparkPoints.map((p) => `${p.x},${p.y}`).join(' L ')}`
       : ''
 
-  const nowPop = todayPop ?? hourlyForecast[0]?.pop ?? null
+  const nowPop = todayPop ?? null
   const nowWind = Math.max(windSpeed, windGust)
   const nowWindFmt = formatWind(nowWind, windDirection ?? null)
   const labelData = useMemo(
@@ -224,7 +221,45 @@ export function TemperatureCurveChart({
     kMax: number
     contentTop: number
     contentBottom: number
+    zeroLineY: number
+    showFreezeTint: boolean
+    chartRectLeft: number
+    chartRectTop: number
+    viewportWidth: number
+    viewportHeight: number
   } | null>(null)
+
+  function updateLayout(
+    chartEl: HTMLDivElement,
+    dims: { width: number; height: number }[],
+  ) {
+    const chartRect = chartEl.getBoundingClientRect()
+    const chartWidth = chartRect.width
+    const chartHeight = chartRect.height
+    if (chartHeight <= 0) return
+    const { kMax, contentTop, contentBottom } = computeLayout(
+      chartHeight,
+      dims,
+      labelData,
+    )
+    const zeroLineY = (dims[0]?.height ?? 0) * kMax * (labelData[0]?.temp ?? 0)
+    const freezeTintHeight = Math.max(0, contentBottom - zeroLineY)
+    const showFreezeTint = freezeTintHeight > 0
+    setLayout({
+      chartWidth,
+      chartHeight,
+      cardDims: dims,
+      kMax,
+      contentTop,
+      contentBottom,
+      zeroLineY,
+      showFreezeTint,
+      chartRectLeft: chartRect.left,
+      chartRectTop: chartRect.top,
+      viewportWidth: document.documentElement.clientWidth,
+      viewportHeight: document.documentElement.clientHeight,
+    })
+  }
 
   useLayoutEffect(() => {
     const chartEl = chartAreaRef.current
@@ -239,28 +274,13 @@ export function TemperatureCurveChart({
         : { width: 0, height: 0 },
     )
     if (dims.some((d) => d.height === 0)) return
-    const { width: chartWidth, height: chartHeight } =
-      chartEl.getBoundingClientRect()
-    if (chartHeight <= 0) return
-    const { kMax, contentTop, contentBottom } = computeLayout(
-      chartHeight,
-      dims,
-      labelData,
-    )
-    setLayout({
-      chartWidth,
-      chartHeight,
-      cardDims: dims,
-      kMax,
-      contentTop,
-      contentBottom,
-    })
+    updateLayout(chartEl, dims)
   }, [labelData])
 
   useLayoutEffect(() => {
     const chartEl = chartAreaRef.current
     if (!chartEl) return
-    const ro = new ResizeObserver(() => {
+    const runLayout = () => {
       const cardEls = cardRefs.current
       const dims = cardEls.slice(0, labelData.length).map((el) =>
         el
@@ -271,25 +291,15 @@ export function TemperatureCurveChart({
           : { width: 0, height: 0 },
       )
       if (dims.some((d) => d.height === 0)) return
-      const { width: chartWidth, height: chartHeight } =
-        chartEl.getBoundingClientRect()
-      if (chartHeight <= 0) return
-      const { kMax, contentTop, contentBottom } = computeLayout(
-        chartHeight,
-        dims,
-        labelData,
-      )
-      setLayout({
-        chartWidth,
-        chartHeight,
-        cardDims: dims,
-        kMax,
-        contentTop,
-        contentBottom,
-      })
-    })
+      updateLayout(chartEl, dims)
+    }
+    const ro = new ResizeObserver(runLayout)
     ro.observe(chartEl)
-    return () => ro.disconnect()
+    window.addEventListener('resize', runLayout)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', runLayout)
+    }
   }, [labelData])
 
   const firstHeight = layout?.cardDims[0]?.height ?? 0
@@ -299,9 +309,9 @@ export function TemperatureCurveChart({
     : []
 
   function renderCard(label: LabelDatum, forMeasure: boolean, index: number) {
-    const hasConditional = (label.popNum ?? 0) > 0 || label.windNum > 0
-    return (
-      <div
+    const opacity = Math.max(0, (100 - index * LABEL_OPACITY_STEP_PCT) / 100)
+    const card = (
+      <WeatherConditionCard
         ref={
           forMeasure
             ? (el) => {
@@ -309,131 +319,82 @@ export function TemperatureCurveChart({
               }
             : undefined
         }
-        className={twJoin(
-          'flex w-full flex-col items-center justify-center overflow-hidden',
-          'border-foreground',
-          label.isToday
-            ? ['mx-0', 'border-16', 'rounded-4xl']
-            : ['mx-0', 'border-12', 'rounded-2xl'],
-        )}
-        style={{
-          opacity: Math.max(0, (100 - index * LABEL_OPACITY_STEP_PCT) / 100),
-        }}
-      >
-        <div
-          className={twJoin(
-            'flex w-full items-center justify-center',
-            label.isToday
-              ? 'px-4 py-6 text-[9rem] leading-[1em] font-black'
-              : 'text-huge px-2 py-3',
-          )}
-        >
-          {formatNumeric(label.temp)}°
-        </div>
-        {hasConditional && (
-          <div
-            className={twJoin('flex', 'w-full', 'flex-col', 'overflow-hidden')}
-          >
-            {(label.popNum ?? 0) > 0 && (
-              <div
-                className={twJoin(
-                  'flex items-center justify-center leading-tight',
-                  (label.popNum ?? 0) >= 50
-                    ? 'text-blue-100'
-                    : 'text-blue-900 dark:text-blue-100',
-                  label.isToday
-                    ? 'px-4 py-2 text-[4rem] font-black'
-                    : 'text-small px-2 py-1',
-                )}
-                style={{
-                  backgroundColor: `rgb(29 78 216 / ${label.popNum}%)`,
-                }}
-              >
-                {label.pop}
-              </div>
-            )}
-            {label.windNum > 0 && (
-              <div
-                className={twJoin(
-                  'flex items-center justify-center gap-1 leading-tight',
-                  label.isToday
-                    ? 'px-4 py-2 text-[4rem] font-black'
-                    : 'text-small px-2 py-1',
-                  windIntensityPct(label.windNum) > 0
-                    ? windIntensityPct(label.windNum) >= 50
-                      ? 'text-red-100'
-                      : 'text-red-900 dark:text-red-100'
-                    : '',
-                )}
-                style={
-                  windIntensityPct(label.windNum) > 0
-                    ? {
-                        backgroundColor: `rgb(185 28 28 / ${windIntensityPct(label.windNum)}%)`,
-                      }
-                    : undefined
-                }
-              >
-                {formatNumeric(label.windNum)}
-                {label.windDirection != null && (
-                  <span
-                    className="inline-block"
-                    style={{
-                      transform: `rotate(${label.windDirection}deg)`,
-                    }}
-                    aria-label={`From ${degreesToCardinal(label.windDirection)}`}
-                  >
-                    <Icon name="arrow-up" />
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+        temp={label.temp}
+        pop={label.pop}
+        popNum={label.popNum}
+        windNum={label.windNum}
+        windDirection={label.windDirection}
+        opacity={opacity}
+      />
     )
+    return card
   }
+
+  const freezeTintBandTop = layout
+    ? layout.chartHeight - layout.contentBottom + layout.zeroLineY
+    : 0
+  const freezeTintHeightToViewportBottom = layout
+    ? layout.viewportHeight - layout.chartRectTop - freezeTintBandTop
+    : 0
 
   return (
     <div
-      className="relative mx-auto flex h-full w-screen flex-col overflow-visible"
-      style={{
-        paddingTop: CHART_INSET_TOP,
-        paddingRight: CHART_INSET_RIGHT,
-        paddingBottom: CHART_INSET_BOTTOM,
-        paddingLeft: CHART_INSET_LEFT,
-      }}
+      className="fixed inset-0 flex h-screen w-screen flex-col overflow-visible"
+      aria-label={`Temperature outlook: current and next ${NUM_FORECASTED_HOURS} hours`}
     >
       <div
         className="flex min-h-0 flex-1 flex-col"
-        aria-label={`Temperature outlook: current and next ${NUM_FORECASTED_HOURS} hours`}
+        style={{
+          paddingTop: CHART_INSET_TOP,
+          paddingRight: CHART_INSET_RIGHT,
+          paddingBottom: CHART_INSET_BOTTOM,
+          paddingLeft: CHART_INSET_LEFT,
+        }}
       >
         <div
-          className="text-small grid shrink-0 place-items-center py-2"
+          className="flex shrink-0 items-center"
           style={{
-            gridTemplateColumns: gridCols,
-            width: '100%',
-            columnGap: CHART_GAP_X,
+            height:
+              CHART_TIME_ROW_HEIGHT_PX + 2 * CHART_TIME_ROW_PADDING_V_PX,
+            paddingTop: CHART_TIME_ROW_PADDING_V_PX,
+            paddingBottom: CHART_TIME_ROW_PADDING_V_PX,
+            marginBottom: CHART_TIME_ROW_PADDING_V_PX,
           }}
           aria-hidden
         >
-          {labelData.map((d, i) => (
-            <div
-              key={d.key}
-              className="flex w-full items-center justify-center"
-              style={{
-                opacity: Math.max(0, (100 - i * LABEL_OPACITY_STEP_PCT) / 100),
-              }}
+          {layout && (
+            <svg
+              width={layout.chartWidth}
+              height={CHART_TIME_ROW_HEIGHT_PX}
+              className="block w-full shrink-0"
+              style={{ overflow: 'visible' }}
             >
-              <span
-                className={twJoin(
-                  'mx-1 min-w-0 flex-1 py-1 text-center',
-                  d.isToday && 'font-bold',
-                )}
-              >
-                {d.time}
-              </span>
-            </div>
-          ))}
+              {labelData.map((d, i) => {
+                const col = columns[i]
+                const cx = col.x + col.width / 2
+                const opacity = Math.max(
+                  0,
+                  (100 - i * LABEL_OPACITY_STEP_PCT) / 100,
+                )
+                return (
+                  <text
+                    key={d.key}
+                    x={cx}
+                    y={CHART_TIME_ROW_HEIGHT_PX / 2}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    className="fill-foreground text-small"
+                    style={{
+                      opacity,
+                      fontWeight: d.isToday ? 'bold' : undefined,
+                    }}
+                  >
+                    {d.time}
+                  </text>
+                )
+              })}
+            </svg>
+          )}
         </div>
         <div
           ref={chartAreaRef}
@@ -460,6 +421,82 @@ export function TemperatureCurveChart({
               </div>
             ))}
           </div>
+          {layout?.showFreezeTint && (
+            <>
+              <svg
+                className="pointer-events-none absolute"
+                width={layout.viewportWidth}
+                height={freezeTintHeightToViewportBottom}
+                aria-hidden
+                style={{ left: 0, top: 0, overflow: 'visible' }}
+              >
+                <defs>
+                  <mask
+                    id="freezeTintMask"
+                    maskUnits="userSpaceOnUse"
+                    maskContentUnits="userSpaceOnUse"
+                    x={0}
+                    y={0}
+                    width={layout.viewportWidth}
+                    height={freezeTintHeightToViewportBottom}
+                  >
+                    <rect
+                      x={0}
+                      y={0}
+                      width={layout.viewportWidth}
+                      height={freezeTintHeightToViewportBottom}
+                      fill="white"
+                    />
+                    {labelData.map((_, i) => {
+                      const offsetY =
+                        i === 0
+                          ? 0
+                          : -firstHeight *
+                            layout.kMax *
+                            (labelData[i].temp - firstTemp)
+                      const col = columns[i]
+                      const cardHeight =
+                        i === 0
+                          ? layout.cardDims[0].height * NOW_CARD_SCALE
+                          : layout.cardDims[i].height
+                      const cardRadius =
+                        i === 0
+                          ? WEATHER_CARD_BORDER_RADIUS_PX * NOW_CARD_SCALE
+                          : WEATHER_CARD_BORDER_RADIUS_PX
+                      const cutoutX = layout.chartRectLeft + col.x
+                      const cutoutY = offsetY - layout.zeroLineY
+                      return (
+                        <rect
+                          key={labelData[i].key}
+                          x={cutoutX}
+                          y={cutoutY}
+                          width={col.width}
+                          height={cardHeight}
+                          rx={cardRadius}
+                          ry={cardRadius}
+                          fill="black"
+                        />
+                      )
+                    })}
+                  </mask>
+                </defs>
+              </svg>
+              <div
+                className="pointer-events-none absolute bg-sky-400/5"
+                style={{
+                  top: freezeTintBandTop,
+                  left: -layout.chartRectLeft,
+                  width: layout.viewportWidth,
+                  height: freezeTintHeightToViewportBottom,
+                  mask: 'url(#freezeTintMask)',
+                  WebkitMask: 'url(#freezeTintMask)',
+                  maskSize: `${layout.viewportWidth}px ${freezeTintHeightToViewportBottom}px`,
+                  WebkitMaskSize: `${layout.viewportWidth}px ${freezeTintHeightToViewportBottom}px`,
+                }}
+                aria-hidden
+              />
+            </>
+          )}
           {layout && (
             <svg
               className="absolute inset-0 h-full w-full overflow-visible"
@@ -486,7 +523,12 @@ export function TemperatureCurveChart({
                       height={dim.height}
                       style={{ overflow: 'visible' }}
                     >
-                      <div className="origin-top-left">
+                      <div
+                        className={twJoin(
+                          'origin-top-left',
+                          i === 0 && 'scale-200 w-1/2',
+                        )}
+                      >
                         {renderCard(label, false, i)}
                       </div>
                     </foreignObject>

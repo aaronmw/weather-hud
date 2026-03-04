@@ -17,6 +17,9 @@ export const CHART_INSET_BOTTOM = '3vh'
 export const CHART_INSET_LEFT = '3vh'
 export const CHART_GAP_X = 8
 export const LABEL_OPACITY_STEP_PCT = 10
+export const WEATHER_CARD_BORDER_RADIUS_PX = 16
+export const CHART_TIME_ROW_HEIGHT_PX = 32
+export const CHART_TIME_ROW_PADDING_V_PX = 8
 
 export const CHART_SCALE_PADDING_BELOW = 2
 export const CHART_Y_BOTTOM_MARGIN_RATIO = 0.2
