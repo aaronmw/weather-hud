@@ -40,6 +40,7 @@ export type WeatherIconName =
   | 'bolt'
   | 'clock'
   | 'cloud'
+  | 'gear'
   | 'cloud-bolt'
   | 'cloud-rain'
   | 'cloud-snow'

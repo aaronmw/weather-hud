@@ -1,5 +1,6 @@
 'use client'
 
+import { DevPanel } from '@/components/DevPanel'
 import { TemperatureCurveChart } from '@/components/TemperatureCurveChart'
 import {
   BURN_IN_ORBIT_DURATION_MS,
@@ -78,6 +79,15 @@ export default function Home() {
   const [devThemeOverride, setDevThemeOverride] = useState<
     'light' | 'dark' | null
   >(null)
+  const [devPanelOpen, setDevPanelOpen] = useState(false)
+  const [selectedHour, setSelectedHour] = useState(0)
+  const [temperatureOffsets, setTemperatureOffsets] = useState<number[]>(() =>
+    Array(7).fill(0),
+  )
+  const [windSpeedOffsets, setWindSpeedOffsets] = useState<number[]>(() =>
+    Array(7).fill(0),
+  )
+  const [popOffsets, setPopOffsets] = useState<number[]>(() => Array(7).fill(0))
 
   const effectiveTheme =
     process.env.NODE_ENV === 'development' && devThemeOverride != null
@@ -95,26 +105,40 @@ export default function Home() {
     animation: `burn-in-orbit ${BURN_IN_ORBIT_DURATION_MS}ms linear infinite`,
   } as React.CSSProperties
 
-  const devThemeToggle =
+  const devPanel =
     process.env.NODE_ENV === 'development' ? (
-      <button
-        type="button"
-        onClick={() =>
-          setDevThemeOverride((prev) =>
-            prev == null
-              ? isNight
-                ? 'light'
-                : 'dark'
-              : prev === 'dark'
-                ? 'light'
-                : 'dark',
-          )
-        }
-        className="border-foreground/30 bg-background/80 fixed right-2 bottom-2 rounded border px-2 py-1 text-[16px] opacity-60 hover:opacity-100"
-        aria-label={`Toggle theme (currently ${effectiveTheme})`}
-      >
-        {effectiveTheme}
-      </button>
+      <DevPanel
+        isOpen={devPanelOpen}
+        onOpenChange={setDevPanelOpen}
+        theme={effectiveTheme}
+        onThemeChange={setDevThemeOverride}
+        selectedHour={selectedHour}
+        onSelectedHourChange={setSelectedHour}
+        temperatureOffset={temperatureOffsets[selectedHour] ?? 0}
+        onTemperatureOffsetChange={(delta) => {
+          setTemperatureOffsets((prev) => {
+            const next = [...prev]
+            next[selectedHour] = (next[selectedHour] ?? 0) + delta
+            return next
+          })
+        }}
+        windSpeedOffset={windSpeedOffsets[selectedHour] ?? 0}
+        onWindSpeedOffsetChange={(delta) => {
+          setWindSpeedOffsets((prev) => {
+            const next = [...prev]
+            next[selectedHour] = (next[selectedHour] ?? 0) + delta
+            return next
+          })
+        }}
+        popOffset={popOffsets[selectedHour] ?? 0}
+        onPopOffsetChange={(delta) => {
+          setPopOffsets((prev) => {
+            const next = [...prev]
+            next[selectedHour] = (next[selectedHour] ?? 0) + delta
+            return next
+          })
+        }}
+      />
     ) : null
 
   if (error) {
@@ -128,7 +152,7 @@ export default function Home() {
             <p className="text-big text-red-600">Error: {error}</p>
           </div>
         </main>
-        {devThemeToggle}
+        {devPanel}
       </>
     )
   }
@@ -144,7 +168,7 @@ export default function Home() {
             <p className="text-big">Loading…</p>
           </div>
         </main>
-        {devThemeToggle}
+        {devPanel}
       </>
     )
   }
@@ -170,12 +194,39 @@ export default function Home() {
           className="flex min-h-0 w-full flex-1 overflow-visible"
         >
           <TemperatureCurveChart
-            currentTemp={data.currentTemp}
-            hourlyForecast={data.hourlyForecast}
-            windSpeed={data.windSpeed}
-            windGust={data.windGust}
+            currentTemp={data.currentTemp + (temperatureOffsets[0] ?? 0)}
+            hourlyForecast={data.hourlyForecast.map((h, i) => ({
+              ...h,
+              temp: h.temp + (temperatureOffsets[i + 1] ?? 0),
+              windSpeed: Math.max(
+                0,
+                h.windSpeed + (windSpeedOffsets[i + 1] ?? 0),
+              ),
+              windGust: Math.max(
+                0,
+                h.windGust + (windSpeedOffsets[i + 1] ?? 0),
+              ),
+              pop:
+                h.pop != null
+                  ? Math.min(
+                      100,
+                      Math.max(0, h.pop + (popOffsets[i + 1] ?? 0)),
+                    )
+                  : null,
+            }))}
+            windSpeed={Math.max(0, data.windSpeed + (windSpeedOffsets[0] ?? 0))}
+            windGust={Math.max(0, data.windGust + (windSpeedOffsets[0] ?? 0))}
             windDirection={data.windDirection}
-            todayPop={data.sevenDayForecast[0]?.pop ?? null}
+            todayPop={(() => {
+              const base =
+                data.sevenDayForecast[0]?.pop ?? data.hourlyForecast[0]?.pop ?? null
+              return base != null
+                ? Math.min(
+                    100,
+                    Math.max(0, base + (popOffsets[0] ?? 0)),
+                  )
+                : null
+            })()}
             iconCode={data.iconCode}
           />
         </section>
@@ -190,7 +241,7 @@ export default function Home() {
           {lastSyncedText && <span>{lastSyncedText}</span>}
         </div>
       )}
-      {devThemeToggle}
+      {devPanel}
     </main>
   )
 }
