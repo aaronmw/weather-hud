@@ -28,7 +28,7 @@ export const OFFSET_SCALE = 0.5
 export const SCALE_FACTOR_FOR_NOW = 2.5
 export const SCALE_FACTOR_FOR_OTHERS = 1.5
 
-export const FONT_AWESOME_ICON_STYLE = 'classic-solid' as FontAwesomeIconStyle
+export const FONT_AWESOME_ICON_STYLE = 'sharp-solid' as FontAwesomeIconStyle
 
 export type FontAwesomeIconStyle =
   | 'chisel'
