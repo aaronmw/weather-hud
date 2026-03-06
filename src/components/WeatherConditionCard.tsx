@@ -30,9 +30,9 @@ export interface WeatherConditionCardData {
 
 export const WeatherConditionCard = forwardRef<
   HTMLDivElement,
-  WeatherConditionCardData & { opacity?: number }
+  WeatherConditionCardData & { opacity?: number; theme?: 'light' | 'dark' }
 >(function WeatherConditionCard(
-  { temp, pop, popNum, windNum, windDirection, opacity = 1 },
+  { temp, pop, popNum, windNum, windDirection, opacity = 1, theme = 'light' },
   ref,
 ) {
   const hasConditional = (popNum ?? 0) > 0 || windNum > 0
@@ -78,7 +78,8 @@ export const WeatherConditionCard = forwardRef<
       />
       <div
         className={twJoin(
-          'relative z-10 flex w-full flex-col items-center justify-center overflow-hidden text-background',
+          'relative z-10 flex w-full flex-col items-center justify-center overflow-hidden',
+          theme === 'dark' && popVal >= 60 ? 'text-foreground' : 'text-background',
           'mx-0 p-[6px]',
         )}
       >
@@ -93,7 +94,9 @@ export const WeatherConditionCard = forwardRef<
             <div
               className={twJoin(
                 'text-small flex items-center justify-center px-2 py-1 leading-tight',
-                popVal >= 60 ? 'text-foreground' : 'text-background',
+                theme === 'dark' && popVal >= 60
+                  ? 'text-foreground'
+                  : 'text-background',
               )}
             >
               {pop}
@@ -103,7 +106,9 @@ export const WeatherConditionCard = forwardRef<
             <div
               className={twJoin(
                 'text-small flex items-center justify-center gap-1 px-2 py-1 leading-tight',
-                windPct >= 60 ? 'text-foreground' : 'text-background',
+                theme === 'dark' && windPct >= 60
+                  ? 'text-foreground'
+                  : 'text-background',
               )}
             >
               {formatNumeric(windNum)}

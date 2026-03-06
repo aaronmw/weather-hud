@@ -194,6 +194,7 @@ export default function Home() {
           className="flex min-h-0 w-full flex-1 overflow-visible"
         >
           <TemperatureCurveChart
+            theme={effectiveTheme}
             currentTemp={data.currentTemp + (temperatureOffsets[0] ?? 0)}
             hourlyForecast={data.hourlyForecast.map((h, i) => ({
               ...h,

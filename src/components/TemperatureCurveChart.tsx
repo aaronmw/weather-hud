@@ -41,6 +41,7 @@ interface LabelDatum {
 }
 
 interface TemperatureCurveChartProps {
+  theme?: 'light' | 'dark'
   currentTemp: number
   hourlyForecast: HourlyForecast[]
   windSpeed?: number
@@ -150,6 +151,7 @@ function getColumnLayout(
 }
 
 export function TemperatureCurveChart({
+  theme = 'light',
   currentTemp,
   hourlyForecast,
   windSpeed = 0,
@@ -342,6 +344,7 @@ export function TemperatureCurveChart({
               }
             : undefined
         }
+        theme={theme}
         temp={label.temp}
         pop={label.pop}
         popNum={label.popNum}
