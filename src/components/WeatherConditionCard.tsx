@@ -36,63 +36,65 @@ export const WeatherConditionCard = forwardRef<
   ref,
 ) {
   const hasConditional = (popNum ?? 0) > 0 || windNum > 0
-  const windPct = windIntensityPct(windNum)
   const popVal = popNum ?? 0
-  const popActive = popVal > 0
-  const popBorderClass = popActive
-    ? popVal >= 50
-      ? '[--pop-border:rgb(219_234_254)]'
-      : '[--pop-border:rgb(30_58_138)] dark:[--pop-border:rgb(219_234_254)]'
-    : ''
-  const popTextClass =
-    popVal >= 50 ? 'text-blue-100' : 'text-blue-900 dark:text-blue-100'
+  const windPct = windIntensityPct(windNum)
+  const windToColor =
+    windNum > 0 && windPct > 0
+      ? `rgb(127 29 29 / ${windPct}%)`
+      : 'transparent'
   return (
     <div
       ref={ref}
       className={twJoin(
-        'flex',
-        'w-full',
-        'flex-col',
-        'items-center',
-        'justify-center',
-        'overflow-hidden',
-        'bg-background mx-0 p-[6px]',
-        popBorderClass,
+        'relative flex w-full flex-col items-center justify-center overflow-hidden',
       )}
       style={{
         opacity,
         borderRadius: `${WEATHER_CARD_BORDER_RADIUS_PX}px`,
-        boxShadow: popActive
-          ? `inset 0 0 0 6px var(--pop-border), 0 0 0 6px var(--pop-border), 0 0 0 6px var(--background)`
-          : `inset 0 0 0 6px var(--foreground), 0 0 0 6px var(--foreground), 0 0 0 6px var(--background)`,
       }}
     >
       <div
+        className="absolute inset-0 overflow-hidden bg-foreground"
+        style={{ borderRadius: `${WEATHER_CARD_BORDER_RADIUS_PX}px` }}
+        aria-hidden
+      />
+      {popVal > 0 && (
+        <div
+          className="absolute inset-0 overflow-hidden"
+          style={{
+            borderRadius: `${WEATHER_CARD_BORDER_RADIUS_PX}px`,
+            backgroundColor: `rgb(30 58 138 / ${popVal}%)`,
+          }}
+          aria-hidden
+        />
+      )}
+      <div
+        className="absolute inset-0 overflow-hidden"
+        style={{
+          borderRadius: `${WEATHER_CARD_BORDER_RADIUS_PX}px`,
+          background: `linear-gradient(to bottom, transparent 0%, transparent 50%, ${windToColor} 100%)`,
+        }}
+        aria-hidden
+      />
+      <div
         className={twJoin(
-          'text-huge flex w-full items-center justify-center px-2 py-3',
-          popActive && popTextClass,
+          'relative z-10 flex w-full flex-col items-center justify-center overflow-hidden text-background',
+          'mx-0 p-[6px]',
         )}
-        style={
-          popActive
-            ? { backgroundColor: `rgb(29 78 216 / ${popVal}%)` }
-            : undefined
-        }
       >
-        {formatNumeric(temp)}°
-      </div>
+        <div className="text-huge flex w-full items-center justify-center px-2 py-3">
+          {formatNumeric(temp)}°
+        </div>
       {hasConditional && (
         <div
           className={twJoin('flex', 'w-full', 'flex-col', 'overflow-hidden')}
         >
-          {popActive && (
+          {(popNum ?? 0) > 0 && (
             <div
               className={twJoin(
                 'text-small flex items-center justify-center px-2 py-1 leading-tight',
-                popTextClass,
+                popVal >= 60 ? 'text-foreground' : 'text-background',
               )}
-              style={{
-                backgroundColor: `rgb(29 78 216 / ${popVal}%)`,
-              }}
             >
               {pop}
             </div>
@@ -101,19 +103,8 @@ export const WeatherConditionCard = forwardRef<
             <div
               className={twJoin(
                 'text-small flex items-center justify-center gap-1 px-2 py-1 leading-tight',
-                windPct > 0
-                  ? windPct >= 50
-                    ? 'text-red-100'
-                    : 'text-red-900 dark:text-red-100'
-                  : '',
+                windPct >= 60 ? 'text-foreground' : 'text-background',
               )}
-              style={
-                windPct > 0
-                  ? {
-                      backgroundColor: `rgb(185 28 28 / ${windPct}%)`,
-                    }
-                  : undefined
-              }
             >
               {formatNumeric(windNum)}
               {windDirection != null && (
@@ -131,6 +122,7 @@ export const WeatherConditionCard = forwardRef<
           )}
         </div>
       )}
+      </div>
     </div>
   )
 })
