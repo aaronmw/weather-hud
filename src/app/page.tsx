@@ -3,17 +3,36 @@
 import { DevPanel } from '@/components/DevPanel'
 import { TemperatureCurveChart } from '@/components/TemperatureCurveChart'
 import {
-  BURN_IN_ORBIT_DURATION_MS,
-  BURN_IN_ORBIT_RADIUS_PX,
-  CANMORE_LAT,
-  CANMORE_LNG,
+  BURN_IN_SCALE_DURATION_MS,
   CANMORE_TZ,
+  NUM_FORECASTED_HOURS,
   REFRESH_INTERVAL_MS,
 } from '@/lib/config'
-import type { WeatherData } from '@/lib/ec-weather'
-import { getSunTimes } from '@/lib/sun'
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { describeIconCode, type WeatherData } from '@/lib/ec-weather'
+import React, { useEffect, useRef, useState } from 'react'
 import { twJoin } from 'tailwind-merge'
+
+const DEV_FORECAST_HOURS = 7
+const TEMP_MIN_C = -30
+const TEMP_MAX_C = 30
+const WIND_MIN_KMH = 0
+const WIND_MAX_KMH = 100
+const POP_MIN_PCT = 0
+const POP_MAX_PCT = 100
+const BURN_IN_SCALE_ORIGINS = [
+  '0% 0%',
+  '50% 0%',
+  '100% 0%',
+  '0% 50%',
+  '50% 50%',
+  '100% 50%',
+  '0% 100%',
+  '50% 100%',
+  '100% 100%',
+] as const
+
+type BurnInScaleOrigin = (typeof BURN_IN_SCALE_ORIGINS)[number]
+const DEFAULT_BURN_IN_SCALE_ORIGIN: BurnInScaleOrigin = '50% 50%'
 
 function fetchWeather() {
   return fetch('/api/weather').then((res) => {
@@ -29,14 +48,111 @@ function formatLastSynced(msAgo: number): string {
   return `Last synced ${min} minute${min === 1 ? '' : 's'} ago`
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value))
+}
+
+function randomInt(min: number, max: number): number {
+  return Math.round(min + Math.random() * (max - min))
+}
+
+function roundToNearestTen(value: number): number {
+  return Math.round(value / 10) * 10
+}
+
+function randomNowTemp(): number {
+  return Math.round(
+    (randomInt(TEMP_MIN_C, TEMP_MAX_C) + randomInt(TEMP_MIN_C, TEMP_MAX_C)) / 2,
+  )
+}
+
+function randomNowWind(): number {
+  return Math.round(WIND_MAX_KMH * Math.random() ** 2.8)
+}
+
+function randomNowPop(): number {
+  return clamp(
+    roundToNearestTen(POP_MAX_PCT * Math.random() ** 1.8),
+    POP_MIN_PCT,
+    POP_MAX_PCT,
+  )
+}
+
+function randomTempNudge(): number {
+  return Math.random() < 0.15 ? randomInt(-5, 5) : randomInt(-2, 2)
+}
+
+function randomWindNudge(): number {
+  return Math.random() < 0.15 ? randomInt(-30, 30) : randomInt(-10, 10)
+}
+
+function randomPopNudge(): number {
+  const nudges = [-20, -10, 0, 10, 20]
+  return nudges[randomInt(0, nudges.length - 1)] ?? 0
+}
+
+function randomBurnInScaleOrigin(
+  previous?: BurnInScaleOrigin,
+): BurnInScaleOrigin {
+  const options = previous
+    ? BURN_IN_SCALE_ORIGINS.filter((origin) => origin !== previous)
+    : BURN_IN_SCALE_ORIGINS
+  return options[randomInt(0, options.length - 1)] ?? '50% 50%'
+}
+
+function formatConsoleHour(utc: Date | string): string {
+  const date = typeof utc === 'string' ? new Date(utc) : utc
+  return date.toLocaleTimeString('en-CA', {
+    timeZone: CANMORE_TZ,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: false,
+  })
+}
+
+function logFetchedWeatherData(d: WeatherData): void {
+  const nowPop = d.sevenDayForecast[0]?.pop ?? d.hourlyForecast[0]?.pop ?? null
+  const rows = [
+    {
+      hour: 'Now',
+      condition: d.condition || describeIconCode(d.iconCode),
+      iconCode: d.iconCode,
+      tempC: d.currentTemp,
+      popPct: nowPop,
+      windKmh: Math.max(d.windSpeed, d.windGust),
+      windSpeedKmh: d.windSpeed,
+      windGustKmh: d.windGust,
+    },
+    ...d.hourlyForecast.slice(0, NUM_FORECASTED_HOURS).map((hour) => ({
+      hour: formatConsoleHour(hour.utc),
+      condition: describeIconCode(hour.iconCode),
+      iconCode: hour.iconCode,
+      tempC: hour.temp,
+      popPct: hour.pop,
+      windKmh: Math.max(hour.windSpeed, hour.windGust),
+      windSpeedKmh: hour.windSpeed,
+      windGustKmh: hour.windGust,
+    })),
+  ]
+
+  console.info(`[Weather HUD] fetched weather data for ${d.location}`, rows)
+  console.table(rows)
+}
+
 export default function Home() {
   const [data, setData] = useState<WeatherData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  const [burnInScaleOrigin, setBurnInScaleOrigin] = useState<BurnInScaleOrigin>(
+    DEFAULT_BURN_IN_SCALE_ORIGIN,
+  )
+  const [burnInScale, setBurnInScale] = useState(1)
   const initialLoadDone = useRef(false)
+  const burnInScaleFrame = useRef<number | null>(null)
 
   const onRefresh = (d: WeatherData) => {
+    logFetchedWeatherData(d)
     setData(d)
     setError(null)
     setLastSyncTime(Date.now())
@@ -66,52 +182,124 @@ export default function Home() {
     return () => clearInterval(id)
   }, [lastSyncTime])
 
-  const isNight = useMemo(() => {
-    const { sunrise, sunset } = getSunTimes(
-      CANMORE_LAT,
-      CANMORE_LNG,
-      new Date(now),
-      CANMORE_TZ,
-    )
-    return now < sunrise.getTime() || now >= sunset.getTime()
-  }, [now])
-
-  const [devThemeOverride, setDevThemeOverride] = useState<
-    'light' | 'dark' | null
-  >(null)
   const [devPanelOpen, setDevPanelOpen] = useState(false)
   const [selectedHour, setSelectedHour] = useState(0)
   const [temperatureOffsets, setTemperatureOffsets] = useState<number[]>(() =>
-    Array(7).fill(0),
+    Array(DEV_FORECAST_HOURS).fill(0),
   )
   const [windSpeedOffsets, setWindSpeedOffsets] = useState<number[]>(() =>
-    Array(7).fill(0),
+    Array(DEV_FORECAST_HOURS).fill(0),
   )
-  const [popOffsets, setPopOffsets] = useState<number[]>(() => Array(7).fill(0))
-
-  const effectiveTheme =
-    process.env.NODE_ENV === 'development' && devThemeOverride != null
-      ? devThemeOverride
-      : isNight
-        ? 'dark'
-        : 'light'
+  const [popOffsets, setPopOffsets] = useState<number[]>(() =>
+    Array(DEV_FORECAST_HOURS).fill(0),
+  )
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', effectiveTheme)
-  }, [effectiveTheme])
+    document.documentElement.setAttribute('data-theme', 'dark')
+    burnInScaleFrame.current = window.requestAnimationFrame(() => {
+      setBurnInScaleOrigin(
+        randomBurnInScaleOrigin(DEFAULT_BURN_IN_SCALE_ORIGIN),
+      )
+      setBurnInScale(0.95)
+    })
+    return () => {
+      if (burnInScaleFrame.current == null) return
+      window.cancelAnimationFrame(burnInScaleFrame.current)
+    }
+  }, [])
 
-  const orbitStyle = {
-    '--burn-in-orbit-radius': `${BURN_IN_ORBIT_RADIUS_PX}px`,
-    animation: `burn-in-orbit ${BURN_IN_ORBIT_DURATION_MS}ms linear infinite`,
+  const burnInStyle = {
+    scale: burnInScale,
+    transformOrigin: burnInScaleOrigin,
+    transition: `scale ${BURN_IN_SCALE_DURATION_MS}ms ease-in-out`,
+    willChange: 'scale',
   } as React.CSSProperties
+
+  const onBurnInTransitionEnd = (
+    event: React.TransitionEvent<HTMLDivElement>,
+  ) => {
+    if (event.propertyName !== 'scale') return
+    if (burnInScale < 1) {
+      setBurnInScale(1)
+      return
+    }
+    setBurnInScaleOrigin((previous) => randomBurnInScaleOrigin(previous))
+    burnInScaleFrame.current = window.requestAnimationFrame(() => {
+      setBurnInScale(0.95)
+    })
+  }
+
+  const burnInMotionProps: React.HTMLAttributes<HTMLDivElement> = {
+    style: burnInStyle,
+    onTransitionEnd: onBurnInTransitionEnd,
+  }
+
+  const randomizeForecast = () => {
+    if (!data) return
+
+    const targetTemps = Array<number>(DEV_FORECAST_HOURS)
+    const targetWinds = Array<number>(DEV_FORECAST_HOURS)
+    const targetPops = Array<number>(DEV_FORECAST_HOURS)
+
+    targetTemps[0] = randomNowTemp()
+    targetWinds[0] = randomNowWind()
+    targetPops[0] = randomNowPop()
+
+    for (let i = 1; i < DEV_FORECAST_HOURS; i++) {
+      targetTemps[i] = clamp(
+        targetTemps[i - 1] + randomTempNudge(),
+        TEMP_MIN_C,
+        TEMP_MAX_C,
+      )
+      targetWinds[i] = clamp(
+        targetWinds[i - 1] + randomWindNudge(),
+        WIND_MIN_KMH,
+        WIND_MAX_KMH,
+      )
+      targetPops[i] = clamp(
+        roundToNearestTen(targetPops[i - 1] + randomPopNudge()),
+        POP_MIN_PCT,
+        POP_MAX_PCT,
+      )
+    }
+
+    const nowBasePop =
+      data.sevenDayForecast[0]?.pop ?? data.hourlyForecast[0]?.pop ?? 0
+    const nextTemperatureOffsets = targetTemps.map((target, index) => {
+      const base =
+        index === 0
+          ? data.currentTemp
+          : (data.hourlyForecast[index - 1]?.temp ?? 0)
+      return target - base
+    })
+    const nextWindSpeedOffsets = targetWinds.map((target, index) => {
+      const base =
+        index === 0
+          ? Math.max(data.windSpeed, data.windGust)
+          : Math.max(
+              data.hourlyForecast[index - 1]?.windSpeed ?? 0,
+              data.hourlyForecast[index - 1]?.windGust ?? 0,
+            )
+      return target - base
+    })
+    const nextPopOffsets = targetPops.map((target, index) => {
+      const base =
+        index === 0 ? nowBasePop : (data.hourlyForecast[index - 1]?.pop ?? 0)
+      return target - base
+    })
+
+    setTemperatureOffsets(nextTemperatureOffsets)
+    setWindSpeedOffsets(nextWindSpeedOffsets)
+    setPopOffsets(nextPopOffsets)
+  }
 
   const devPanel =
     process.env.NODE_ENV === 'development' ? (
       <DevPanel
         isOpen={devPanelOpen}
         onOpenChange={setDevPanelOpen}
-        theme={effectiveTheme}
-        onThemeChange={setDevThemeOverride}
+        canRandomize={data != null}
+        onRandomizeForecast={randomizeForecast}
         selectedHour={selectedHour}
         onSelectedHourChange={setSelectedHour}
         temperatureOffset={temperatureOffsets[selectedHour] ?? 0}
@@ -144,10 +332,10 @@ export default function Home() {
   if (error) {
     return (
       <>
-        <main className="flex min-h-screen w-screen flex-col items-center justify-center overflow-hidden p-8">
+        <main className="flex min-h-screen w-screen flex-col items-center justify-center overflow-hidden bg-black p-8">
           <div
             className="flex min-h-screen w-full flex-col items-center justify-center"
-            style={orbitStyle}
+            {...burnInMotionProps}
           >
             <p className="text-big text-red-600">Error: {error}</p>
           </div>
@@ -160,10 +348,10 @@ export default function Home() {
   if (!data) {
     return (
       <>
-        <main className="flex min-h-screen w-screen flex-col items-center justify-center overflow-hidden p-8">
+        <main className="flex min-h-screen w-screen flex-col items-center justify-center overflow-hidden bg-black p-8">
           <div
             className="flex min-h-screen w-full flex-col items-center justify-center"
-            style={orbitStyle}
+            {...burnInMotionProps}
           >
             <p className="text-big">Loading…</p>
           </div>
@@ -179,7 +367,7 @@ export default function Home() {
   return (
     <main
       className={twJoin(
-        'relative flex h-screen w-screen flex-col overflow-hidden',
+        'relative flex h-screen w-screen flex-col overflow-hidden bg-black',
       )}
     >
       <div
@@ -187,14 +375,13 @@ export default function Home() {
           'weather-strip-and-chart flex min-h-0 flex-1 flex-col',
           'w-full',
         )}
-        style={orbitStyle}
+        {...burnInMotionProps}
       >
         <section
           aria-label="Temperature outlook"
           className="flex min-h-0 w-full flex-1 overflow-visible"
         >
           <TemperatureCurveChart
-            theme={effectiveTheme}
             currentTemp={data.currentTemp + (temperatureOffsets[0] ?? 0)}
             hourlyForecast={data.hourlyForecast.map((h, i) => ({
               ...h,
@@ -207,26 +394,22 @@ export default function Home() {
                 0,
                 h.windGust + (windSpeedOffsets[i + 1] ?? 0),
               ),
-              pop:
-                h.pop != null
-                  ? Math.min(
-                      100,
-                      Math.max(0, h.pop + (popOffsets[i + 1] ?? 0)),
-                    )
-                  : null,
+              pop: Math.min(
+                100,
+                Math.max(0, (h.pop ?? 0) + (popOffsets[i + 1] ?? 0)),
+              ),
             }))}
             windSpeed={Math.max(0, data.windSpeed + (windSpeedOffsets[0] ?? 0))}
             windGust={Math.max(0, data.windGust + (windSpeedOffsets[0] ?? 0))}
             windDirection={data.windDirection}
             todayPop={(() => {
               const base =
-                data.sevenDayForecast[0]?.pop ?? data.hourlyForecast[0]?.pop ?? null
+                data.sevenDayForecast[0]?.pop ??
+                data.hourlyForecast[0]?.pop ??
+                null
               return base != null
-                ? Math.min(
-                    100,
-                    Math.max(0, base + (popOffsets[0] ?? 0)),
-                  )
-                : null
+                ? Math.min(100, Math.max(0, base + (popOffsets[0] ?? 0)))
+                : Math.min(100, Math.max(0, popOffsets[0] ?? 0))
             })()}
             iconCode={data.iconCode}
           />

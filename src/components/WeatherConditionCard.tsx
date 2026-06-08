@@ -1,132 +1,200 @@
 'use client'
 
-import { forwardRef } from 'react'
+import { type CSSProperties, forwardRef } from 'react'
 import { Icon } from '@/components/Icon'
-import {
-  WIND_THRESHOLD_HIGH_KMH,
-  WIND_THRESHOLD_LOW_KMH,
-  WEATHER_CARD_BORDER_RADIUS_PX,
-} from '@/lib/config'
+import { getConditionIcon } from '@/lib/condition-icons'
 import { degreesToCardinal, formatNumeric } from '@/lib/format'
 import { twJoin } from 'tailwind-merge'
 
-function windIntensityPct(kmh: number): number {
-  if (kmh < WIND_THRESHOLD_LOW_KMH) return 0
-  if (kmh >= WIND_THRESHOLD_HIGH_KMH) return 100
-  return (
-    5 +
-    ((kmh - WIND_THRESHOLD_LOW_KMH) * (100 - 5)) /
-      (WIND_THRESHOLD_HIGH_KMH - WIND_THRESHOLD_LOW_KMH)
+const AIR_METERS_PER_FAN_REVOLUTION = 10
+const MIN_FAN_ROTATION_DURATION_SECONDS = 0.45
+const MAX_FAN_ROTATION_DURATION_SECONDS = 8
+const CONDITION_ICON_STYLE: CSSProperties = { fontSize: 'min(9.6vh, 40.8cqw)' }
+const TEMPERATURE_STYLE: CSSProperties = { fontSize: 'min(9.6vh, 50.4cqw)' }
+const CONDITION_ONLY_ICON_STYLE: CSSProperties = {
+  fontSize: 'min(9.6vh, 72cqw)',
+}
+const SECONDARY_ICON_STYLE: CSSProperties = { fontSize: 'min(6.4vh, 27.2cqw)' }
+const SECONDARY_VALUE_STYLE: CSSProperties = {
+  fontSize: 'min(6.4vh, 33.6cqw)',
+}
+const POP_DISPLAY_THRESHOLD_PCT = 20
+
+function getFanRotationDurationSeconds(windKmh: number): number | null {
+  if (windKmh <= 0) return null
+  const windMetersPerSecond = windKmh / 3.6
+  const duration = AIR_METERS_PER_FAN_REVOLUTION / windMetersPerSecond
+  return Math.min(
+    MAX_FAN_ROTATION_DURATION_SECONDS,
+    Math.max(MIN_FAN_ROTATION_DURATION_SECONDS, duration),
   )
 }
 
 export interface WeatherConditionCardData {
   temp: number
+  iconCode: string
   pop: string | null
   popNum: number | null
   windNum: number
   windDirection: number | null
+  isPrimaryColumn?: boolean
+  showTemp?: boolean
+  showPopBadge?: boolean
+  showWindBadge?: boolean
 }
 
 export const WeatherConditionCard = forwardRef<
   HTMLDivElement,
-  WeatherConditionCardData & { opacity?: number; theme?: 'light' | 'dark' }
+  WeatherConditionCardData
 >(function WeatherConditionCard(
-  { temp, pop, popNum, windNum, windDirection, opacity = 1, theme = 'light' },
+  {
+    temp,
+    iconCode,
+    pop,
+    popNum,
+    windNum,
+    windDirection,
+    isPrimaryColumn = false,
+    showTemp = true,
+    showPopBadge = false,
+    showWindBadge = false,
+  },
   ref,
 ) {
-  const hasConditional = (popNum ?? 0) > 0 || windNum > 0
   const popVal = popNum ?? 0
-  const windPct = windIntensityPct(windNum)
-  const windToColor =
-    windNum > 0 && windPct > 0
-      ? `rgb(127 29 29 / ${windPct}%)`
-      : 'transparent'
+  const popText = pop ?? `${formatNumeric(popVal)}%`
+  const showPop = popVal >= POP_DISPLAY_THRESHOLD_PCT
+  const fanRotationDuration = getFanRotationDurationSeconds(windNum)
+  const fanStyle =
+    fanRotationDuration != null
+      ? {
+          animation: `wind-fan-spin ${fanRotationDuration}s linear infinite`,
+        }
+      : undefined
+  const showMainTemp = isPrimaryColumn || showTemp
+
   return (
     <div
       ref={ref}
-      className={twJoin(
-        'relative flex w-full flex-col items-center justify-center overflow-hidden',
-      )}
-      style={{
-        opacity,
-        borderRadius: `${WEATHER_CARD_BORDER_RADIUS_PX}px`,
-      }}
+      className="relative flex w-full flex-col items-center justify-center overflow-visible text-white"
+      style={{ containerType: 'inline-size' }}
     >
       <div
-        className="absolute inset-0 overflow-hidden bg-foreground"
-        style={{ borderRadius: `${WEATHER_CARD_BORDER_RADIUS_PX}px` }}
-        aria-hidden
-      />
-      {popVal > 0 && (
-        <div
-          className="absolute inset-0 overflow-hidden"
-          style={{
-            borderRadius: `${WEATHER_CARD_BORDER_RADIUS_PX}px`,
-            backgroundColor: `rgb(30 58 138 / ${popVal}%)`,
-          }}
-          aria-hidden
-        />
-      )}
-      <div
-        className="absolute inset-0 overflow-hidden"
-        style={{
-          borderRadius: `${WEATHER_CARD_BORDER_RADIUS_PX}px`,
-          background: `linear-gradient(to bottom, transparent 0%, transparent 50%, ${windToColor} 100%)`,
-        }}
-        aria-hidden
-      />
-      <div
         className={twJoin(
-          'relative z-10 flex w-full flex-col items-center justify-center overflow-hidden',
-          theme === 'dark' && popVal >= 60 ? 'text-foreground' : 'text-background',
-          'mx-0 p-[6px]',
+          'flex w-full flex-col justify-center gap-4 overflow-visible py-3',
+          'items-center px-3',
         )}
       >
-        <div className="text-huge flex w-full items-center justify-center px-2 py-3">
-          {formatNumeric(temp)}°
-        </div>
-      {hasConditional && (
         <div
-          className={twJoin('flex', 'w-full', 'flex-col', 'overflow-hidden')}
-        >
-          {(popNum ?? 0) > 0 && (
-            <div
-              className={twJoin(
-                'text-small flex items-center justify-center px-2 py-1 leading-tight',
-                theme === 'dark' && popVal >= 60
-                  ? 'text-foreground'
-                  : 'text-background',
-              )}
-            >
-              {pop}
-            </div>
+          className={twJoin(
+            showMainTemp
+              ? 'flex flex-col gap-[1.5cqw]'
+              : 'flex items-center justify-center',
+            'items-center',
           )}
-          {windNum > 0 && (
+        >
+          <Icon
+            name={getConditionIcon(iconCode, 'solid')}
+            style={
+              showMainTemp ? CONDITION_ICON_STYLE : CONDITION_ONLY_ICON_STYLE
+            }
+            aria-hidden
+          />
+          {showMainTemp && (
             <div
-              className={twJoin(
-                'text-small flex items-center justify-center gap-1 px-2 py-1 leading-tight',
-                theme === 'dark' && windPct >= 60
-                  ? 'text-foreground'
-                  : 'text-background',
-              )}
+              className="flex min-w-0 items-center justify-center leading-none"
+              style={TEMPERATURE_STYLE}
             >
-              {formatNumeric(windNum)}
-              {windDirection != null && (
-                <span
-                  className="inline-block"
-                  style={{
-                    transform: `rotate(${windDirection}deg)`,
-                  }}
-                  aria-label={`From ${degreesToCardinal(windDirection)}`}
-                >
-                  <Icon name="arrow-up" />
-                </span>
-              )}
+              {formatNumeric(temp)}°
             </div>
           )}
         </div>
-      )}
+
+        {isPrimaryColumn ? (
+          <>
+            {showPop && (
+              <div className="flex items-center gap-[3cqw]">
+                <Icon
+                  name="solid:raindrops"
+                  style={SECONDARY_ICON_STYLE}
+                  aria-hidden
+                />
+                <div
+                  className="leading-none"
+                  style={SECONDARY_VALUE_STYLE}
+                >
+                  {popText}
+                </div>
+              </div>
+            )}
+            <div className="flex items-center gap-[3cqw]">
+              <Icon
+                name="solid:fan"
+                className="inline-block"
+                style={{ ...SECONDARY_ICON_STYLE, ...fanStyle }}
+                aria-hidden
+              />
+              <div
+                className="flex items-center gap-1 leading-none"
+                style={SECONDARY_VALUE_STYLE}
+              >
+                {formatNumeric(windNum)}
+                {windDirection != null && windNum > 0 && (
+                  <span
+                    className="inline-block text-[0.42em]"
+                    style={{
+                      transform: `rotate(${windDirection}deg)`,
+                    }}
+                    aria-label={`From ${degreesToCardinal(windDirection)}`}
+                  >
+                    <Icon name="arrow-up" />
+                  </span>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-2">
+            {showPopBadge && (
+              <div
+                className="inline-flex items-center gap-2 rounded-full bg-[#073a67] px-4 py-2 leading-none text-white"
+                style={SECONDARY_VALUE_STYLE}
+              >
+                <Icon
+                  name="solid:raindrops"
+                  className="text-[0.8em]"
+                  aria-hidden
+                />
+                {popText}
+              </div>
+            )}
+            {showWindBadge && (
+              <div
+                className="inline-flex items-center gap-2 rounded-full bg-[#760000] px-4 py-2 leading-none text-white"
+                style={SECONDARY_VALUE_STYLE}
+              >
+                <Icon
+                  name="solid:fan"
+                  className="inline-block text-[0.8em]"
+                  style={fanStyle}
+                  aria-hidden
+                />
+                {formatNumeric(windNum)}
+                {windDirection != null && (
+                  <span
+                    className="inline-block text-[0.58em]"
+                    style={{
+                      transform: `rotate(${windDirection}deg)`,
+                    }}
+                    aria-label={`From ${degreesToCardinal(windDirection)}`}
+                  >
+                    <Icon name="arrow-up" />
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

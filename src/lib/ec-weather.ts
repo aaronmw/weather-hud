@@ -127,6 +127,10 @@ const ICON_CODE_DESCRIPTIONS: Record<string, string> = {
   '47': 'Chance of thunderstorms',
 }
 
+export function describeIconCode(iconCode: string): string {
+  return ICON_CODE_DESCRIPTIONS[iconCode] ?? `Icon ${iconCode}`
+}
+
 export async function fetchWeather(
   siteCode: string,
   province: string,

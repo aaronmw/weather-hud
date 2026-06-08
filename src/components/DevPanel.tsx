@@ -9,8 +9,8 @@ const HOUR_OPTIONS = 7
 type DevPanelProps = {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
-  theme: 'light' | 'dark'
-  onThemeChange: (theme: 'light' | 'dark') => void
+  canRandomize: boolean
+  onRandomizeForecast: () => void
   selectedHour: number
   onSelectedHourChange: (hour: number) => void
   temperatureOffset: number
@@ -24,8 +24,8 @@ type DevPanelProps = {
 export function DevPanel({
   isOpen,
   onOpenChange,
-  theme,
-  onThemeChange,
+  canRandomize,
+  onRandomizeForecast,
   selectedHour,
   onSelectedHourChange,
   temperatureOffset,
@@ -91,36 +91,30 @@ export function DevPanel({
             <button
               type="button"
               onClick={close}
-              className="text-foreground/70 hover:text-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded text-sm transition-colors hover:bg-foreground/10"
+              className="text-foreground/70 hover:text-foreground hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded text-sm transition-colors"
               aria-label="Close"
             >
               ×
             </button>
           </div>
-          <div className="flex flex-col gap-2">
-            <span className="text-sm opacity-80">Theme</span>
-            <div
-              className="border-foreground/30 flex rounded-md border p-0.5"
-              role="group"
-              aria-label="Theme"
-            >
-              {(['light', 'dark'] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => onThemeChange(t)}
-                  className={twJoin(
-                    'flex-1 rounded px-2 py-1.5 text-sm capitalize transition-colors',
-                    theme === t
-                      ? 'bg-foreground text-background'
-                      : 'hover:bg-foreground/10',
-                  )}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={onRandomizeForecast}
+            disabled={!canRandomize}
+            className={twJoin(
+              'border-foreground/30 flex h-9 w-full items-center justify-center gap-2 rounded border px-3 text-sm font-bold transition-colors',
+              canRandomize
+                ? 'hover:bg-foreground/10'
+                : 'cursor-not-allowed opacity-40',
+            )}
+          >
+            <Icon
+              name="solid:bolt"
+              className="text-xs opacity-70"
+              aria-hidden
+            />
+            Randomize
+          </button>
           <div className="flex flex-col gap-2">
             <span className="text-sm opacity-80">Hour</span>
             <div
@@ -128,23 +122,21 @@ export function DevPanel({
               role="group"
               aria-label="Forecast hour"
             >
-              {Array.from({ length: HOUR_OPTIONS }, (_, i) => i).map(
-                (hour) => (
-                  <button
-                    key={hour}
-                    type="button"
-                    onClick={() => onSelectedHourChange(hour)}
-                    className={twJoin(
-                      'min-w-0 flex-1 rounded px-1 py-1.5 text-sm font-medium transition-colors',
-                      selectedHour === hour
-                        ? 'bg-foreground text-background'
-                        : 'hover:bg-foreground/10',
-                    )}
-                  >
-                    {hour}
-                  </button>
-                ),
-              )}
+              {Array.from({ length: HOUR_OPTIONS }, (_, i) => i).map((hour) => (
+                <button
+                  key={hour}
+                  type="button"
+                  onClick={() => onSelectedHourChange(hour)}
+                  className={twJoin(
+                    'min-w-0 flex-1 rounded px-1 py-1.5 text-sm font-bold transition-colors',
+                    selectedHour === hour
+                      ? 'bg-foreground text-background'
+                      : 'hover:bg-foreground/10',
+                  )}
+                >
+                  {hour}
+                </button>
+              ))}
             </div>
           </div>
           <div className="flex flex-col gap-2">
@@ -153,18 +145,21 @@ export function DevPanel({
               <button
                 type="button"
                 onClick={() => onTemperatureOffsetChange(-1)}
-                className="border-foreground/30 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors hover:bg-foreground/10"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
                 aria-label={`Decrease hour ${selectedHour} temperature by 1°`}
               >
                 −
               </button>
               <span className="text-sm tabular-nums">
-                {temperatureOffset > 0 ? `+${temperatureOffset}` : temperatureOffset}°
+                {temperatureOffset > 0
+                  ? `+${temperatureOffset}`
+                  : temperatureOffset}
+                °
               </span>
               <button
                 type="button"
                 onClick={() => onTemperatureOffsetChange(1)}
-                className="border-foreground/30 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors hover:bg-foreground/10"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
                 aria-label={`Increase hour ${selectedHour} temperature by 1°`}
               >
                 +
@@ -177,7 +172,7 @@ export function DevPanel({
               <button
                 type="button"
                 onClick={() => onWindSpeedOffsetChange(-10)}
-                className="border-foreground/30 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors hover:bg-foreground/10"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
                 aria-label={`Decrease hour ${selectedHour} windspeed by 10`}
               >
                 −
@@ -189,7 +184,7 @@ export function DevPanel({
               <button
                 type="button"
                 onClick={() => onWindSpeedOffsetChange(10)}
-                className="border-foreground/30 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors hover:bg-foreground/10"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
                 aria-label={`Increase hour ${selectedHour} windspeed by 10`}
               >
                 +
@@ -202,7 +197,7 @@ export function DevPanel({
               <button
                 type="button"
                 onClick={() => onPopOffsetChange(-10)}
-                className="border-foreground/30 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors hover:bg-foreground/10"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
                 aria-label={`Decrease hour ${selectedHour} POP by 10%`}
               >
                 −
@@ -213,7 +208,7 @@ export function DevPanel({
               <button
                 type="button"
                 onClick={() => onPopOffsetChange(10)}
-                className="border-foreground/30 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors hover:bg-foreground/10"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
                 aria-label={`Increase hour ${selectedHour} POP by 10%`}
               >
                 +

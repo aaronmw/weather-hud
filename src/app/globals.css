@@ -4,11 +4,11 @@
 
 :root {
   --color-light: #ffe9a4;
-  --color-dark: #372800;
+  --color-dark: #000000;
   --mask-cutout: #000;
-  --background: var(--color-light);
-  --foreground: var(--color-dark);
-  --label-bg: #ffffff;
+  --background: var(--color-dark);
+  --foreground: var(--color-light);
+  --label-bg: var(--color-dark);
 }
 
 @theme inline {
@@ -31,25 +31,27 @@
 }
 
 @utility text-big {
-  @apply text-[3rem];
+  @apply text-[2.4rem];
   @apply leading-[1em];
-  @apply font-black;
+  @apply font-bold;
 }
 
 @utility text-huge {
-  @apply text-[4.5rem];
+  @apply text-[5.4rem];
   @apply leading-[1em];
-  @apply font-black;
+  @apply font-bold;
 }
 
 @utility text-small {
   @apply text-[2rem];
   @apply leading-[1em];
-  @apply font-black;
+  @apply font-bold;
 }
 
 html {
   @apply text-[2vh];
+  @apply bg-background;
+  @apply text-foreground;
   @apply m-0;
   @apply overflow-hidden;
 }
@@ -76,18 +78,8 @@ body {
   flex-direction: column;
 }
 
-@keyframes burn-in-orbit {
-  0%,
-  100% {
-    transform: translate(var(--burn-in-orbit-radius), 0);
-  }
-  25% {
-    transform: translate(0, var(--burn-in-orbit-radius));
-  }
-  50% {
-    transform: translate(calc(-1 * var(--burn-in-orbit-radius)), 0);
-  }
-  75% {
-    transform: translate(0, calc(-1 * var(--burn-in-orbit-radius)));
+@keyframes wind-fan-spin {
+  to {
+    transform: rotate(360deg);
   }
 }

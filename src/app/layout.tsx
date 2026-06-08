@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
-import { Barlow_Condensed } from 'next/font/google'
+import { Barlow_Semi_Condensed } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 
-const barlowCondensed = Barlow_Condensed({
+const barlowSemiCondensed = Barlow_Semi_Condensed({
   variable: '--font-body',
   subsets: ['latin'],
-  weight: ['400', '600', '700'],
+  weight: ['700'],
 })
 
 export const metadata: Metadata = {
@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      data-theme="light"
+      data-theme="dark"
     >
       <head>
         <Script
@@ -31,7 +31,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className={`${barlowCondensed.variable} antialiased`}>
+      <body className={`${barlowSemiCondensed.variable} font-bold antialiased`}>
         {children}
       </body>
     </html>
