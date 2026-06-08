@@ -116,49 +116,60 @@ export const WeatherConditionCard = forwardRef<
         </div>
 
         {isPrimaryColumn ? (
-          <>
+          <div
+            className="inline-grid grid-cols-[1.15em_auto] items-center gap-x-[3cqw] gap-y-2"
+            style={SECONDARY_VALUE_STYLE}
+          >
             {showPop && (
-              <div className="flex items-center gap-[3cqw]">
-                <Icon
-                  name="solid:raindrops"
-                  className="text-big"
-                  style={SECONDARY_ICON_STYLE}
-                  aria-hidden
-                />
+              <>
                 <div
-                  className="text-big leading-none"
+                  className="flex w-[1.15em] justify-center"
+                  style={SECONDARY_VALUE_STYLE}
+                >
+                  <Icon
+                    name="solid:raindrops"
+                    className="text-big"
+                    style={SECONDARY_ICON_STYLE}
+                    aria-hidden
+                  />
+                </div>
+                <div
+                  className="text-big justify-self-start leading-none"
                   style={SECONDARY_VALUE_STYLE}
                 >
                   {popText}
                 </div>
-              </div>
+              </>
             )}
-            <div className="flex items-center gap-[3cqw]">
+            <div
+              className="flex w-[1.15em] justify-center"
+              style={SECONDARY_VALUE_STYLE}
+            >
               <Icon
                 name="solid:fan"
                 className="text-big inline-block"
                 style={{ ...SECONDARY_ICON_STYLE, ...fanStyle }}
                 aria-hidden
               />
-              <div
-                className="text-big flex items-center gap-1 leading-none"
-                style={SECONDARY_VALUE_STYLE}
-              >
-                {formatNumeric(windNum)}
-                {windDirection != null && windNum > 0 && (
-                  <span
-                    className="inline-block text-[0.42em]"
-                    style={{
-                      transform: `rotate(${windDirection}deg)`,
-                    }}
-                    aria-label={`From ${degreesToCardinal(windDirection)}`}
-                  >
-                    <Icon name="arrow-up" />
-                  </span>
-                )}
-              </div>
             </div>
-          </>
+            <div
+              className="text-big flex items-center gap-1 justify-self-start leading-none"
+              style={SECONDARY_VALUE_STYLE}
+            >
+              {formatNumeric(windNum)}
+              {windDirection != null && windNum > 0 && (
+                <span
+                  className="inline-block text-[0.42em]"
+                  style={{
+                    transform: `rotate(${windDirection}deg)`,
+                  }}
+                  aria-label={`From ${degreesToCardinal(windDirection)}`}
+                >
+                  <Icon name="arrow-up" />
+                </span>
+              )}
+            </div>
+          </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
             {showPopBadge && (

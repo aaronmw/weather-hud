@@ -21,6 +21,7 @@ const K_MAX_ITERATIONS = 20
 const K_EPS = 1e-3
 const HIGH_WIND_THRESHOLD_KMH = 20
 const POP_DISPLAY_THRESHOLD_PCT = 20
+const TIME_LABEL_STYLE = { fontSize: 'min(6.4vh, 33.6cqw)' }
 
 type ConditionKind = 'sun' | 'rain' | 'snow' | 'cloud' | 'storm'
 
@@ -52,14 +53,15 @@ interface TemperatureCurveChartProps {
 
 function formatTime(utc: Date | string): string {
   const d = typeof utc === 'string' ? new Date(utc) : utc
-  return d
-    .toLocaleTimeString('en-CA', {
-      timeZone: CANMORE_TZ,
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    })
-    .replace(/\s*[ap]\.?m\.?\s*$/i, '')
+  const hourPart = new Intl.DateTimeFormat('en-CA', {
+    timeZone: CANMORE_TZ,
+    hour: 'numeric',
+    hourCycle: 'h23',
+  })
+    .formatToParts(d)
+    .find((part) => part.type === 'hour')
+  const hour = Number(hourPart?.value ?? 0)
+  return String(hour % 12 || 12)
 }
 
 function formatWind(
@@ -193,7 +195,7 @@ export function TemperatureCurveChart({
     const labels = [
       {
         key: 0,
-        time: 'Now',
+        time: 'NOW',
         temp: currentTemp,
         iconCode: currentIconCode ?? hourlyForecast[0]?.iconCode ?? '00',
         pop: nowPop != null ? `${formatNumeric(nowPop)}%` : null,
@@ -422,8 +424,9 @@ export function TemperatureCurveChart({
                     y={CHART_TIME_ROW_HEIGHT_PX / 2}
                     textAnchor="middle"
                     dominantBaseline="central"
-                    className="text-small fill-white"
+                    className="text-big fill-white"
                     style={{
+                      ...TIME_LABEL_STYLE,
                       fontWeight: d.isToday ? 'bold' : undefined,
                     }}
                   >

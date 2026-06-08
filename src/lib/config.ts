@@ -20,7 +20,7 @@ export const CHART_GAP_X = 0
 export const LABEL_OPACITY_STEP_PCT = 10
 export const WEATHER_CARD_BORDER_RADIUS_PX = 0
 export const WEATHER_CARD_BORDER_RING_PX = 0
-export const CHART_TIME_ROW_HEIGHT_PX = 32
+export const CHART_TIME_ROW_HEIGHT_PX = 76
 export const CHART_TIME_ROW_PADDING_V_PX = 8
 export const CHART_TOP_RESERVE_PX = 48
 
