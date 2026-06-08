@@ -87,7 +87,7 @@ export function DevPanel({
           aria-label="Dev panel"
         >
           <div className="flex items-center justify-between">
-            <span className="text-sm font-bold">Dev</span>
+            <span className="text-sm font-semibold">Dev</span>
             <button
               type="button"
               onClick={close}
@@ -102,7 +102,7 @@ export function DevPanel({
             onClick={onRandomizeForecast}
             disabled={!canRandomize}
             className={twJoin(
-              'border-foreground/30 flex h-9 w-full items-center justify-center gap-2 rounded border px-3 text-sm font-bold transition-colors',
+              'border-foreground/30 flex h-9 w-full items-center justify-center gap-2 rounded border px-3 text-sm font-semibold transition-colors',
               canRandomize
                 ? 'hover:bg-foreground/10'
                 : 'cursor-not-allowed opacity-40',
@@ -128,7 +128,7 @@ export function DevPanel({
                   type="button"
                   onClick={() => onSelectedHourChange(hour)}
                   className={twJoin(
-                    'min-w-0 flex-1 rounded px-1 py-1.5 text-sm font-bold transition-colors',
+                    'min-w-0 flex-1 rounded px-1 py-1.5 text-sm font-semibold transition-colors',
                     selectedHour === hour
                       ? 'bg-foreground text-background'
                       : 'hover:bg-foreground/10',
@@ -145,7 +145,7 @@ export function DevPanel({
               <button
                 type="button"
                 onClick={() => onTemperatureOffsetChange(-1)}
-                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-semibold transition-colors"
                 aria-label={`Decrease hour ${selectedHour} temperature by 1°`}
               >
                 −
@@ -159,7 +159,7 @@ export function DevPanel({
               <button
                 type="button"
                 onClick={() => onTemperatureOffsetChange(1)}
-                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-semibold transition-colors"
                 aria-label={`Increase hour ${selectedHour} temperature by 1°`}
               >
                 +
@@ -172,7 +172,7 @@ export function DevPanel({
               <button
                 type="button"
                 onClick={() => onWindSpeedOffsetChange(-10)}
-                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-semibold transition-colors"
                 aria-label={`Decrease hour ${selectedHour} windspeed by 10`}
               >
                 −
@@ -184,7 +184,7 @@ export function DevPanel({
               <button
                 type="button"
                 onClick={() => onWindSpeedOffsetChange(10)}
-                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-semibold transition-colors"
                 aria-label={`Increase hour ${selectedHour} windspeed by 10`}
               >
                 +
@@ -197,7 +197,7 @@ export function DevPanel({
               <button
                 type="button"
                 onClick={() => onPopOffsetChange(-10)}
-                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-semibold transition-colors"
                 aria-label={`Decrease hour ${selectedHour} POP by 10%`}
               >
                 −
@@ -208,7 +208,7 @@ export function DevPanel({
               <button
                 type="button"
                 onClick={() => onPopOffsetChange(10)}
-                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-bold transition-colors"
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-semibold transition-colors"
                 aria-label={`Increase hour ${selectedHour} POP by 10%`}
               >
                 +

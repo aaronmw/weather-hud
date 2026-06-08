@@ -45,21 +45,21 @@
 @utility text-big {
   @apply text-[2.4rem];
   @apply leading-[1em];
-  @apply font-bold;
+  @apply font-semibold;
   @apply text-shadow-big;
 }
 
 @utility text-huge {
   @apply text-[6.48rem];
   @apply leading-[1em];
-  @apply font-bold;
+  @apply font-semibold;
   @apply text-shadow-huge;
 }
 
 @utility text-small {
   @apply text-[2rem];
   @apply leading-[1em];
-  @apply font-bold;
+  @apply font-semibold;
   @apply text-shadow-small;
 }
 

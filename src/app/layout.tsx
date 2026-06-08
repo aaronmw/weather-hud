@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
-import { Barlow_Semi_Condensed } from 'next/font/google'
+import { Atkinson_Hyperlegible_Next } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 
-const barlowSemiCondensed = Barlow_Semi_Condensed({
+const atkinsonHyperlegible = Atkinson_Hyperlegible_Next({
   variable: '--font-body',
   subsets: ['latin'],
-  weight: ['400', '700'],
+  weight: ['400', '600'],
 })
 
 export const metadata: Metadata = {
@@ -31,7 +31,9 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body className={`${barlowSemiCondensed.variable} font-bold antialiased`}>
+      <body
+        className={`${atkinsonHyperlegible.variable} font-semibold antialiased`}
+      >
         {children}
       </body>
     </html>

@@ -92,10 +92,10 @@ function conditionKindsForIcon(code: string): ConditionKind[] {
   if (['39', '40', '41', '42', '43', '44', '45', '46', '47'].includes(code)) {
     return ['storm']
   }
-  if (['07', '08', '15', '16', '17', '18', '19'].includes(code)) {
+  if (['07', '08', '15', '16', '17', '18'].includes(code)) {
     return ['snow']
   }
-  if (['09', '10', '11', '12', '13', '14'].includes(code)) {
+  if (['09', '10', '11', '12', '13', '14', '19'].includes(code)) {
     return ['rain']
   }
   if (['00', '30', '31'].includes(code)) return ['sun']
@@ -126,18 +126,24 @@ function conditionColor(kind: ConditionKind): string {
   }
 }
 
+function getSunnyColumnBackground(): string {
+  const sunColor = conditionColor('sun')
+  return `linear-gradient(to bottom, ${sunColor} 0%, color-mix(in srgb, ${sunColor} 50%, white 50%) 50%, ${sunColor} 100%)`
+}
+
 function getColumnBackground(iconCode: string): string {
   const mixedDirection = mixedConditionDirectionForIcon(iconCode)
   if (mixedDirection) {
     const sunColor = conditionColor('sun')
     const cloudColor = conditionColor('cloud')
-    const cloudOverlayOpacity = mixedDirection === 'sun-forward' ? 0.5 : 1
     return mixedDirection === 'sun-forward'
-      ? `linear-gradient(to bottom, transparent 0%, color-mix(in srgb, ${cloudColor} ${cloudOverlayOpacity * 100}%, transparent) 100%), ${sunColor}`
-      : `linear-gradient(to bottom, color-mix(in srgb, ${cloudColor} ${cloudOverlayOpacity * 100}%, transparent) 0%, transparent 100%), ${sunColor}`
+      ? sunColor
+      : `linear-gradient(to bottom, color-mix(in srgb, ${cloudColor} 20%, transparent) 0%, transparent 50%, color-mix(in srgb, ${cloudColor} 20%, transparent) 100%), ${sunColor}`
   }
   const kinds = conditionKindsForIcon(iconCode)
   const colors = kinds.map(conditionColor)
+  if (kinds.length === 1 && kinds[0] === 'sun')
+    return getSunnyColumnBackground()
   if (colors.length === 1) return colors[0]
   return `linear-gradient(to bottom, ${colors[0]} 0%, ${colors[1]} 100%)`
 }

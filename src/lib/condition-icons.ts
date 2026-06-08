@@ -27,7 +27,7 @@ const iconMap = {
   '16': 'snowflake',
   '17': 'snowflake',
   '18': 'snowflake',
-  '19': 'snowflake',
+  '19': 'cloud-rain',
   '20': 'cloud',
   '21': 'cloud',
   '22': 'cloud',

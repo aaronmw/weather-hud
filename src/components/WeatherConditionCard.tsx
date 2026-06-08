@@ -3,7 +3,7 @@
 import { type CSSProperties, forwardRef, type ReactNode } from 'react'
 import { Icon, type IconString } from '@/components/Icon'
 import { getConditionIcon } from '@/lib/condition-icons'
-import { degreesToCardinal, formatNumeric } from '@/lib/format'
+import { formatNumeric } from '@/lib/format'
 import { twJoin } from 'tailwind-merge'
 
 const AIR_METERS_PER_FAN_REVOLUTION = 10
@@ -47,8 +47,6 @@ interface ShadowedRotatingIconProps {
   iconClassName?: string
   style?: CSSProperties
   motionStyle?: CSSProperties
-  ariaHidden?: boolean
-  ariaLabel?: string
 }
 
 function ShadowedRotatingIcon({
@@ -57,8 +55,6 @@ function ShadowedRotatingIcon({
   iconClassName,
   style,
   motionStyle,
-  ariaHidden = true,
-  ariaLabel,
 }: ShadowedRotatingIconProps) {
   const iconStyle: CSSProperties = {
     ...style,
@@ -78,9 +74,7 @@ function ShadowedRotatingIcon({
         'relative inline-grid place-items-center leading-none',
         wrapperClassName,
       )}
-      aria-hidden={ariaHidden}
-      aria-label={ariaHidden ? undefined : ariaLabel}
-      role={!ariaHidden && ariaLabel ? 'img' : undefined}
+      aria-hidden
     >
       <Icon
         name={name}
@@ -161,7 +155,6 @@ export const WeatherConditionCard = forwardRef<
     pop,
     popNum,
     windNum,
-    windDirection,
     isDaylight = true,
     isPrimaryColumn = false,
     showTemp = true,
@@ -271,17 +264,6 @@ export const WeatherConditionCard = forwardRef<
               style={SECONDARY_VALUE_STYLE}
             >
               {formatNumeric(windNum)}
-              {windDirection != null && windNum > 0 && (
-                <ShadowedRotatingIcon
-                  name="arrow-up"
-                  wrapperClassName="text-[0.42em]"
-                  motionStyle={{
-                    transform: `rotate(${windDirection}deg)`,
-                  }}
-                  ariaHidden={false}
-                  ariaLabel={`From ${degreesToCardinal(windDirection)}`}
-                />
-              )}
             </div>
           </div>
         ) : (
@@ -301,17 +283,6 @@ export const WeatherConditionCard = forwardRef<
                 tone="wind"
               >
                 {formatNumeric(windNum)}
-                {windDirection != null && (
-                  <ShadowedRotatingIcon
-                    name="arrow-up"
-                    wrapperClassName="ml-1 text-[0.58em]"
-                    motionStyle={{
-                      transform: `rotate(${windDirection}deg)`,
-                    }}
-                    ariaHidden={false}
-                    ariaLabel={`From ${degreesToCardinal(windDirection)}`}
-                  />
-                )}
               </MetricBadge>
             )}
           </div>

@@ -20,6 +20,19 @@ const WIND_MIN_KMH = 0
 const WIND_MAX_KMH = 100
 const POP_MIN_PCT = 0
 const POP_MAX_PCT = 100
+const DEV_CONDITION_CODES = ['00', '01', '02', '03', '10', '12', '16', '39']
+const DEV_CONDITION_WEIGHTS = [10, 16, 24, 16, 12, 14, 5, 3]
+const DEV_CONDITION_TRANSITIONS: Record<string, string[]> = {
+  '00': ['00', '01', '02'],
+  '01': ['00', '01', '02', '03'],
+  '02': ['01', '02', '03', '10'],
+  '03': ['02', '03', '10', '12'],
+  '10': ['03', '10', '12', '16'],
+  '12': ['03', '10', '12', '16', '39'],
+  '16': ['10', '12', '16'],
+  '39': ['10', '12', '39'],
+}
+const DEV_POP_CONDITION_CODES = new Set(['12', '39'])
 function fetchWeather() {
   return fetch('/api/weather').then((res) => {
     if (!res.ok) throw new Error(res.statusText)
@@ -75,6 +88,26 @@ function randomWindNudge(): number {
 function randomPopNudge(): number {
   const nudges = [-20, -10, 0, 10, 20]
   return nudges[randomInt(0, nudges.length - 1)] ?? 0
+}
+
+function randomWeightedConditionCode(): string {
+  const total = DEV_CONDITION_WEIGHTS.reduce((sum, weight) => sum + weight, 0)
+  let cursor = Math.random() * total
+  for (let i = 0; i < DEV_CONDITION_CODES.length; i++) {
+    cursor -= DEV_CONDITION_WEIGHTS[i] ?? 0
+    if (cursor <= 0) return DEV_CONDITION_CODES[i] ?? '02'
+  }
+  return '02'
+}
+
+function randomNextConditionCode(previous: string): string {
+  if (Math.random() < 0.65) return previous
+  const options = DEV_CONDITION_TRANSITIONS[previous] ?? DEV_CONDITION_CODES
+  return options[randomInt(0, options.length - 1)] ?? previous
+}
+
+function conditionCanHavePop(iconCode: string): boolean {
+  return DEV_POP_CONDITION_CODES.has(iconCode)
 }
 
 function formatConsoleHour(utc: Date | string): string {
@@ -163,6 +196,9 @@ export default function Home() {
   const [popOffsets, setPopOffsets] = useState<number[]>(() =>
     Array(DEV_FORECAST_HOURS).fill(0),
   )
+  const [conditionCodeOverrides, setConditionCodeOverrides] = useState<
+    (string | null)[]
+  >(() => Array(DEV_FORECAST_HOURS).fill(null))
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'dark')
@@ -174,10 +210,14 @@ export default function Home() {
     const targetTemps = Array<number>(DEV_FORECAST_HOURS)
     const targetWinds = Array<number>(DEV_FORECAST_HOURS)
     const targetPops = Array<number>(DEV_FORECAST_HOURS)
+    const targetConditionCodes = Array<string>(DEV_FORECAST_HOURS)
 
     targetTemps[0] = randomNowTemp()
     targetWinds[0] = randomNowWind()
-    targetPops[0] = randomNowPop()
+    targetConditionCodes[0] = randomWeightedConditionCode()
+    targetPops[0] = conditionCanHavePop(targetConditionCodes[0])
+      ? randomNowPop()
+      : 0
 
     for (let i = 1; i < DEV_FORECAST_HOURS; i++) {
       targetTemps[i] = clamp(
@@ -190,11 +230,20 @@ export default function Home() {
         WIND_MIN_KMH,
         WIND_MAX_KMH,
       )
-      targetPops[i] = clamp(
-        roundToNearestTen(targetPops[i - 1] + randomPopNudge()),
-        POP_MIN_PCT,
-        POP_MAX_PCT,
+      targetConditionCodes[i] = randomNextConditionCode(
+        targetConditionCodes[i - 1] ?? '02',
       )
+      targetPops[i] = conditionCanHavePop(targetConditionCodes[i])
+        ? clamp(
+            roundToNearestTen(
+              (conditionCanHavePop(targetConditionCodes[i - 1] ?? '')
+                ? (targetPops[i - 1] ?? 0)
+                : randomNowPop()) + randomPopNudge(),
+            ),
+            POP_MIN_PCT,
+            POP_MAX_PCT,
+          )
+        : 0
     }
 
     const nowBasePop =
@@ -225,6 +274,7 @@ export default function Home() {
     setTemperatureOffsets(nextTemperatureOffsets)
     setWindSpeedOffsets(nextWindSpeedOffsets)
     setPopOffsets(nextPopOffsets)
+    setConditionCodeOverrides(targetConditionCodes)
   }
 
   const devPanel =
@@ -328,6 +378,7 @@ export default function Home() {
               currentTemp={data.currentTemp + (temperatureOffsets[0] ?? 0)}
               hourlyForecast={data.hourlyForecast.map((h, i) => ({
                 ...h,
+                iconCode: conditionCodeOverrides[i + 1] ?? h.iconCode,
                 temp: h.temp + (temperatureOffsets[i + 1] ?? 0),
                 windSpeed: Math.max(
                   0,
@@ -357,7 +408,7 @@ export default function Home() {
                   ? Math.min(100, Math.max(0, base + (popOffsets[0] ?? 0)))
                   : Math.min(100, Math.max(0, popOffsets[0] ?? 0))
               })()}
-              iconCode={data.iconCode}
+              iconCode={conditionCodeOverrides[0] ?? data.iconCode}
               currentDateMs={now}
             />
           </section>
