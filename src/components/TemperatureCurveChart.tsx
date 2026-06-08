@@ -126,24 +126,29 @@ function conditionColor(kind: ConditionKind): string {
   }
 }
 
-function getSunnyColumnBackground(): string {
-  const sunColor = conditionColor('sun')
-  return `linear-gradient(to bottom, ${sunColor} 0%, color-mix(in srgb, ${sunColor} 50%, white 50%) 50%, ${sunColor} 100%)`
+function getColumnBaseColor(isDaylight: boolean): string {
+  return isDaylight ? conditionColor('sun') : 'var(--color-night)'
 }
 
-function getColumnBackground(iconCode: string): string {
+function getLightOverlay(baseColor: string): string {
+  return `linear-gradient(to bottom, transparent 0%, color-mix(in srgb, ${baseColor} 50%, white 50%) 50%, transparent 100%)`
+}
+
+function getColumnBackground(iconCode: string, isDaylight: boolean): string {
+  const baseColor = getColumnBaseColor(isDaylight)
   const mixedDirection = mixedConditionDirectionForIcon(iconCode)
   if (mixedDirection) {
-    const sunColor = conditionColor('sun')
     const cloudColor = conditionColor('cloud')
     return mixedDirection === 'sun-forward'
-      ? sunColor
-      : `linear-gradient(to bottom, color-mix(in srgb, ${cloudColor} 20%, transparent) 0%, transparent 50%, color-mix(in srgb, ${cloudColor} 20%, transparent) 100%), ${sunColor}`
+      ? baseColor
+      : `linear-gradient(to bottom, color-mix(in srgb, ${cloudColor} 20%, transparent) 0%, transparent 50%, color-mix(in srgb, ${cloudColor} 20%, transparent) 100%), ${baseColor}`
   }
   const kinds = conditionKindsForIcon(iconCode)
   const colors = kinds.map(conditionColor)
   if (kinds.length === 1 && kinds[0] === 'sun')
-    return getSunnyColumnBackground()
+    return `${getLightOverlay(baseColor)}, ${baseColor}`
+  if (kinds.length === 1 && kinds[0] === 'rain')
+    return `linear-gradient(to bottom, ${conditionColor('rain')} 0%, color-mix(in srgb, ${conditionColor('rain')} 50%, ${baseColor} 50%) 50%, ${conditionColor('rain')} 100%), ${baseColor}`
   if (colors.length === 1) return colors[0]
   return `linear-gradient(to bottom, ${colors[0]} 0%, ${colors[1]} 100%)`
 }
@@ -422,7 +427,10 @@ export function TemperatureCurveChart({
                 style={{
                   left: col.x,
                   width: col.width,
-                  background: getColumnBackground(label.iconCode),
+                  background: getColumnBackground(
+                    label.iconCode,
+                    label.isDaylight,
+                  ),
                 }}
               />
             )
