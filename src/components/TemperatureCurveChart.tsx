@@ -265,9 +265,8 @@ export function TemperatureCurveChart({
 
   const updateLayout = useCallback(
     (chartEl: HTMLDivElement, dims: { width: number; height: number }[]) => {
-      const chartRect = chartEl.getBoundingClientRect()
-      const chartWidth = chartRect.width
-      const chartHeight = chartRect.height
+      const chartWidth = chartEl.clientWidth
+      const chartHeight = chartEl.clientHeight
       if (chartHeight <= 0) return
       const { kMax, contentTop, contentBottom } = computeLayout(
         chartHeight,
