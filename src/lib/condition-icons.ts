@@ -39,8 +39,8 @@ const iconMap = {
   '28': 'cloud',
   '29': 'cloud',
   '30': 'cloud-sun',
-  '31': 'cloud',
-  '32': 'cloud',
+  '31': 'sun',
+  '32': 'cloud-sun',
   '33': 'cloud',
   '34': 'cloud',
   '35': 'cloud',
@@ -61,6 +61,18 @@ const iconMap = {
 export function getConditionIcon(
   code: string,
   variant: IconVariant = v,
+  isDaylight = true,
 ): IconString {
-  return `${variant}:${iconMap[code] ?? 'cloud'}`
+  const mappedIcon = iconMap[code] ?? 'cloud'
+  const icon =
+    mappedIcon === 'sun'
+      ? isDaylight
+        ? 'sun'
+        : 'moon'
+      : mappedIcon === 'cloud-sun'
+        ? isDaylight
+          ? 'cloud-sun'
+          : 'cloud-moon'
+        : mappedIcon
+  return `${variant}:${icon}`
 }

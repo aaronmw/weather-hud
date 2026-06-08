@@ -41,6 +41,7 @@ export interface WeatherConditionCardData {
   popNum: number | null
   windNum: number
   windDirection: number | null
+  isDaylight?: boolean
   isPrimaryColumn?: boolean
   showTemp?: boolean
   showPopBadge?: boolean
@@ -58,6 +59,7 @@ export const WeatherConditionCard = forwardRef<
     popNum,
     windNum,
     windDirection,
+    isDaylight = true,
     isPrimaryColumn = false,
     showTemp = true,
     showPopBadge = false,
@@ -98,7 +100,7 @@ export const WeatherConditionCard = forwardRef<
           )}
         >
           <Icon
-            name={getConditionIcon(iconCode, 'solid')}
+            name={getConditionIcon(iconCode, 'solid', isDaylight)}
             className="text-huge"
             style={
               showMainTemp ? CONDITION_ICON_STYLE : CONDITION_ONLY_ICON_STYLE

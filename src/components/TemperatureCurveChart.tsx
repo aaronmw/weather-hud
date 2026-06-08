@@ -4,6 +4,8 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { WeatherConditionCard } from '@/components/WeatherConditionCard'
 import {
   CANMORE_TZ,
+  CANMORE_LAT,
+  CANMORE_LNG,
   CHART_GAP_X,
   CHART_INSET_BOTTOM,
   CHART_INSET_LEFT,
@@ -16,6 +18,7 @@ import {
 } from '@/lib/config'
 import type { HourlyForecast } from '@/lib/ec-weather'
 import { formatNumeric } from '@/lib/format'
+import { getSunTimes } from '@/lib/sun'
 
 const K_MAX_ITERATIONS = 20
 const K_EPS = 1e-3
@@ -36,6 +39,7 @@ interface LabelDatum {
   windDirection: number | null
   isToday: boolean
   isPrimaryColumn: boolean
+  isDaylight: boolean
   showTemp: boolean
   showPopBadge: boolean
   showWindBadge: boolean
@@ -49,6 +53,7 @@ interface TemperatureCurveChartProps {
   windDirection?: number | null
   todayPop?: number | null
   iconCode?: string
+  currentDateMs: number
 }
 
 function formatTime(utc: Date | string): string {
@@ -69,6 +74,17 @@ function formatWind(
   direction: number | null,
 ): { windNum: number; windDirection: number | null } {
   return { windNum: speed, windDirection: direction }
+}
+
+function isDaylightAt(date: Date): boolean {
+  const { sunrise, sunset } = getSunTimes(
+    CANMORE_LAT,
+    CANMORE_LNG,
+    date,
+    CANMORE_TZ,
+  )
+  const time = date.getTime()
+  return time >= sunrise.getTime() && time < sunset.getTime()
 }
 
 function conditionKindsForIcon(code: string): ConditionKind[] {
@@ -181,6 +197,7 @@ export function TemperatureCurveChart({
   windDirection = null,
   todayPop = null,
   iconCode: currentIconCode,
+  currentDateMs,
 }: TemperatureCurveChartProps) {
   const temps = [currentTemp, ...hourlyForecast.map((h) => h.temp)].slice(
     0,
@@ -191,6 +208,7 @@ export function TemperatureCurveChart({
   const nowPop = todayPop ?? null
   const nowWind = Math.max(windSpeed, windGust)
   const nowWindFmt = formatWind(nowWind, windDirection ?? null)
+  const currentDate = useMemo(() => new Date(currentDateMs), [currentDateMs])
   const labelData = useMemo(() => {
     const labels = [
       {
@@ -204,6 +222,7 @@ export function TemperatureCurveChart({
         windDirection: nowWindFmt.windDirection,
         isToday: true,
         isPrimaryColumn: true,
+        isDaylight: isDaylightAt(currentDate),
         showTemp: true,
         showPopBadge: false,
         showWindBadge: false,
@@ -224,6 +243,9 @@ export function TemperatureCurveChart({
           windDirection: windFmt.windDirection,
           isToday: false,
           isPrimaryColumn: false,
+          isDaylight: isDaylightAt(
+            typeof h.utc === 'string' ? new Date(h.utc) : h.utc,
+          ),
           showTemp: false,
           showPopBadge: false,
           showWindBadge: false,
@@ -246,6 +268,7 @@ export function TemperatureCurveChart({
   }, [
     currentTemp,
     currentIconCode,
+    currentDate,
     hourlyForecast,
     nowPop,
     nowWindFmt.windDirection,
@@ -350,6 +373,7 @@ export function TemperatureCurveChart({
         popNum={label.popNum}
         windNum={label.windNum}
         windDirection={label.windDirection}
+        isDaylight={label.isDaylight}
         isPrimaryColumn={label.isPrimaryColumn}
         showTemp={label.showTemp}
         showPopBadge={label.showPopBadge}

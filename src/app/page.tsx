@@ -358,6 +358,7 @@ export default function Home() {
                   : Math.min(100, Math.max(0, popOffsets[0] ?? 0))
               })()}
               iconCode={data.iconCode}
+              currentDateMs={now}
             />
           </section>
         </div>
