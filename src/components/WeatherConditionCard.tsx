@@ -61,7 +61,10 @@ function MetricBadge({ icon, iconStyle, tone, children }: MetricBadgeProps) {
           style={{ ...SECONDARY_ICON_STYLE, ...iconStyle }}
         />
       </span>
-      <span className="text-big inline-flex min-w-0 items-center justify-self-start pr-[0.42em] leading-none">
+      <span
+        className="text-big inline-flex min-w-0 items-center justify-self-start pr-[0.42em] leading-none"
+        style={SECONDARY_VALUE_STYLE}
+      >
         {children}
       </span>
     </div>
