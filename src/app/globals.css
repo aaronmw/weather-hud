@@ -31,7 +31,7 @@
 }
 
 @utility text-shadow-big {
-  text-shadow: 2px 2px 1px black;
+  text-shadow: 4px 4px 2px black;
 }
 
 @utility text-shadow-huge {
@@ -39,7 +39,7 @@
 }
 
 @utility text-shadow-small {
-  text-shadow: 1px 1px 0 black;
+  text-shadow: 4px 4px 2px black;
 }
 
 @utility text-big {

@@ -9,8 +9,8 @@ import type {
 const v = getIconVariantForStyle(FONT_AWESOME_ICON_STYLE) as IconVariant
 const iconMap = {
   '00': 'sun',
-  '01': 'sun',
-  '02': 'cloud-sun',
+  '01': 'sun-cloud',
+  '02': 'sun-cloud',
   '03': 'cloud-sun',
   '04': 'cloud',
   '05': 'cloud',
@@ -38,9 +38,9 @@ const iconMap = {
   '27': 'cloud',
   '28': 'cloud',
   '29': 'cloud',
-  '30': 'cloud-sun',
+  '30': 'sun',
   '31': 'sun',
-  '32': 'cloud-sun',
+  '32': 'sun-cloud',
   '33': 'cloud',
   '34': 'cloud',
   '35': 'cloud',
@@ -73,6 +73,10 @@ export function getConditionIcon(
         ? isDaylight
           ? 'cloud-sun'
           : 'cloud-moon'
+        : mappedIcon === 'sun-cloud'
+          ? isDaylight
+            ? 'sun-cloud'
+            : 'moon-cloud'
         : mappedIcon
   return `${variant}:${icon}`
 }

@@ -27,6 +27,7 @@ const POP_DISPLAY_THRESHOLD_PCT = 20
 const TIME_LABEL_STYLE = { fontSize: 'min(6.4vh, 33.6cqw)' }
 
 type ConditionKind = 'sun' | 'rain' | 'snow' | 'cloud' | 'storm'
+type MixedConditionDirection = 'sun-forward' | 'cloud-forward'
 
 interface LabelDatum {
   key: number
@@ -97,9 +98,17 @@ function conditionKindsForIcon(code: string): ConditionKind[] {
   if (['09', '10', '11', '12', '13', '14'].includes(code)) {
     return ['rain']
   }
-  if (['00', '01'].includes(code)) return ['sun']
-  if (['02', '03', '30'].includes(code)) return ['sun', 'cloud']
+  if (['00', '30', '31'].includes(code)) return ['sun']
+  if (['01', '02', '03', '32'].includes(code)) return ['sun', 'cloud']
   return ['cloud']
+}
+
+function mixedConditionDirectionForIcon(
+  code: string,
+): MixedConditionDirection | null {
+  if (['01', '02', '32'].includes(code)) return 'sun-forward'
+  if (code === '03') return 'cloud-forward'
+  return null
 }
 
 function conditionColor(kind: ConditionKind): string {
@@ -122,6 +131,15 @@ function getColumnBackground(
   isPrimaryColumn: boolean,
 ): string {
   if (isPrimaryColumn) return '#303030'
+  const mixedDirection = mixedConditionDirectionForIcon(iconCode)
+  if (mixedDirection) {
+    const sunColor = conditionColor('sun')
+    const cloudColor = conditionColor('cloud')
+    const cloudOverlayOpacity = mixedDirection === 'sun-forward' ? 0.5 : 1
+    return mixedDirection === 'sun-forward'
+      ? `linear-gradient(to bottom, transparent 0%, color-mix(in srgb, ${cloudColor} ${cloudOverlayOpacity * 100}%, transparent) 100%), ${sunColor}`
+      : `linear-gradient(to bottom, color-mix(in srgb, ${cloudColor} ${cloudOverlayOpacity * 100}%, transparent) 0%, transparent 100%), ${sunColor}`
+  }
   const kinds = conditionKindsForIcon(iconCode)
   const colors = kinds.map(conditionColor)
   if (colors.length === 1) return colors[0]
