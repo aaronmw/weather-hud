@@ -6,7 +6,7 @@ import './globals.css'
 const barlowSemiCondensed = Barlow_Semi_Condensed({
   variable: '--font-body',
   subsets: ['latin'],
-  weight: ['700'],
+  weight: ['400', '700'],
 })
 
 export const metadata: Metadata = {

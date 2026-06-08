@@ -10,13 +10,13 @@ const AIR_METERS_PER_FAN_REVOLUTION = 10
 const MIN_FAN_ROTATION_DURATION_SECONDS = 0.45
 const MAX_FAN_ROTATION_DURATION_SECONDS = 8
 const CONDITION_ICON_STYLE: CSSProperties = {
-  fontSize: 'min(11.52vh, 48.96cqw)',
+  fontSize: 'min(13.824vh, 58.752cqw)',
 }
 const TEMPERATURE_STYLE: CSSProperties = {
-  fontSize: 'min(11.52vh, 60.48cqw)',
+  fontSize: 'min(13.824vh, 72.576cqw)',
 }
 const CONDITION_ONLY_ICON_STYLE: CSSProperties = {
-  fontSize: 'min(11.52vh, 86.4cqw)',
+  fontSize: 'min(13.824vh, 103.68cqw)',
 }
 const SECONDARY_ICON_STYLE: CSSProperties = { fontSize: 'min(6.4vh, 27.2cqw)' }
 const SECONDARY_VALUE_STYLE: CSSProperties = {
@@ -124,14 +124,14 @@ export const WeatherConditionCard = forwardRef<
     >
       <div
         className={twJoin(
-          'flex w-full flex-col justify-center gap-4 overflow-visible py-3',
+          'flex w-full flex-col justify-center gap-8 overflow-visible py-3',
           'items-center px-3',
         )}
       >
         <div
           className={twJoin(
             showMainTemp
-              ? 'flex flex-col gap-[1.5cqw]'
+              ? 'flex flex-col gap-[3cqw]'
               : 'flex items-center justify-center',
             'items-center',
           )}
@@ -146,7 +146,7 @@ export const WeatherConditionCard = forwardRef<
           />
           {showMainTemp && (
             <div
-              className="text-huge flex min-w-0 items-center justify-center leading-none"
+              className="text-huge flex min-w-0 items-center justify-center font-normal leading-none"
               style={TEMPERATURE_STYLE}
             >
               {formatNumeric(temp)}°

@@ -50,7 +50,7 @@
 }
 
 @utility text-huge {
-  @apply text-[5.4rem];
+  @apply text-[6.48rem];
   @apply leading-[1em];
   @apply font-bold;
   @apply text-shadow-huge;
