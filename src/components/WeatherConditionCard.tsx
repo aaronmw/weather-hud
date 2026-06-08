@@ -1,7 +1,7 @@
 'use client'
 
-import { type CSSProperties, forwardRef } from 'react'
-import { Icon } from '@/components/Icon'
+import { type CSSProperties, forwardRef, type ReactNode } from 'react'
+import { Icon, type IconString } from '@/components/Icon'
 import { getConditionIcon } from '@/lib/condition-icons'
 import { degreesToCardinal, formatNumeric } from '@/lib/format'
 import { twJoin } from 'tailwind-merge'
@@ -31,6 +31,40 @@ function getFanRotationDurationSeconds(windKmh: number): number | null {
   return Math.min(
     MAX_FAN_ROTATION_DURATION_SECONDS,
     Math.max(MIN_FAN_ROTATION_DURATION_SECONDS, duration),
+  )
+}
+
+interface MetricBadgeProps {
+  icon: IconString
+  iconStyle?: CSSProperties
+  tone: 'pop' | 'wind'
+  children: ReactNode
+}
+
+function MetricBadge({ icon, iconStyle, tone, children }: MetricBadgeProps) {
+  return (
+    <div
+      className={twJoin(
+        'inline-grid grid-cols-[auto_auto] items-stretch overflow-hidden rounded-full',
+        'p-0 leading-none text-white',
+        tone === 'pop' ? 'bg-[#073a67]' : 'bg-[#760000]',
+      )}
+      style={SECONDARY_VALUE_STYLE}
+    >
+      <span
+        className="text-shadow-big inline-flex aspect-square h-[1.32em] shrink-0 items-center justify-center leading-none"
+        aria-hidden
+      >
+        <Icon
+          name={icon}
+          className="inline-flex h-[1em] w-[1em] items-center justify-center leading-none [&_[data-icon]]:leading-none"
+          style={{ ...SECONDARY_ICON_STYLE, ...iconStyle }}
+        />
+      </span>
+      <span className="text-big inline-flex min-w-0 items-center justify-self-start pr-[0.42em] leading-none">
+        {children}
+      </span>
+    </div>
   )
 }
 
@@ -175,33 +209,23 @@ export const WeatherConditionCard = forwardRef<
         ) : (
           <div className="flex flex-col items-center gap-2">
             {showPopBadge && (
-              <div
-                className="inline-flex items-center gap-2 rounded-full bg-[#073a67] px-4 py-2 leading-none text-white"
-                style={SECONDARY_VALUE_STYLE}
+              <MetricBadge
+                icon="solid:raindrops"
+                tone="pop"
               >
-                <Icon
-                  name="solid:raindrops"
-                  className="text-shadow-big text-[0.8em]"
-                  aria-hidden
-                />
-                <span className="text-big">{popText}</span>
-              </div>
+                {popText}
+              </MetricBadge>
             )}
             {showWindBadge && (
-              <div
-                className="inline-flex items-center gap-2 rounded-full bg-[#760000] px-4 py-2 leading-none text-white"
-                style={SECONDARY_VALUE_STYLE}
+              <MetricBadge
+                icon="solid:fan"
+                iconStyle={fanStyle}
+                tone="wind"
               >
-                <Icon
-                  name="solid:fan"
-                  className="text-shadow-big inline-block text-[0.8em]"
-                  style={fanStyle}
-                  aria-hidden
-                />
-                <span className="text-big">{formatNumeric(windNum)}</span>
+                {formatNumeric(windNum)}
                 {windDirection != null && (
                   <span
-                    className="inline-block text-[0.58em]"
+                    className="ml-1 inline-block text-[0.58em]"
                     style={{
                       transform: `rotate(${windDirection}deg)`,
                     }}
@@ -210,7 +234,7 @@ export const WeatherConditionCard = forwardRef<
                     <Icon name="arrow-up" />
                   </span>
                 )}
-              </div>
+              </MetricBadge>
             )}
           </div>
         )}
