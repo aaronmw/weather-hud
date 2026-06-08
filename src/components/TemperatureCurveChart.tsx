@@ -126,11 +126,7 @@ function conditionColor(kind: ConditionKind): string {
   }
 }
 
-function getColumnBackground(
-  iconCode: string,
-  isPrimaryColumn: boolean,
-): string {
-  if (isPrimaryColumn) return '#303030'
+function getColumnBackground(iconCode: string): string {
   const mixedDirection = mixedConditionDirectionForIcon(iconCode)
   if (mixedDirection) {
     const sunColor = conditionColor('sun')
@@ -420,10 +416,7 @@ export function TemperatureCurveChart({
                 style={{
                   left: col.x,
                   width: col.width,
-                  background: getColumnBackground(
-                    label.iconCode,
-                    label.isPrimaryColumn,
-                  ),
+                  background: getColumnBackground(label.iconCode),
                 }}
               />
             )

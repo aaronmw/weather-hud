@@ -41,6 +41,63 @@ interface MetricBadgeProps {
   children: ReactNode
 }
 
+interface ShadowedRotatingIconProps {
+  name: IconString
+  wrapperClassName?: string
+  iconClassName?: string
+  style?: CSSProperties
+  motionStyle?: CSSProperties
+  ariaHidden?: boolean
+  ariaLabel?: string
+}
+
+function ShadowedRotatingIcon({
+  name,
+  wrapperClassName,
+  iconClassName,
+  style,
+  motionStyle,
+  ariaHidden = true,
+  ariaLabel,
+}: ShadowedRotatingIconProps) {
+  const iconStyle: CSSProperties = {
+    ...style,
+    ...motionStyle,
+    textShadow: 'none',
+  }
+  const shadowStyle: CSSProperties = {
+    ...iconStyle,
+    color: 'black',
+    filter: 'blur(2px)',
+    translate: '4px 4px',
+  }
+
+  return (
+    <span
+      className={twJoin(
+        'relative inline-grid place-items-center leading-none',
+        wrapperClassName,
+      )}
+      aria-hidden={ariaHidden}
+      aria-label={ariaHidden ? undefined : ariaLabel}
+      role={!ariaHidden && ariaLabel ? 'img' : undefined}
+    >
+      <Icon
+        name={name}
+        className={twJoin('col-start-1 row-start-1', iconClassName)}
+        style={shadowStyle}
+        aria-hidden
+      />
+      <Icon
+        name={name}
+        className={twJoin('col-start-1 row-start-1', iconClassName)}
+        style={iconStyle}
+        aria-hidden
+      />
+    </span>
+  )
+}
+
 function MetricBadge({ icon, iconStyle, tone, children }: MetricBadgeProps) {
   return (
     <div
@@ -55,11 +112,20 @@ function MetricBadge({ icon, iconStyle, tone, children }: MetricBadgeProps) {
         className="text-shadow-big inline-flex aspect-square h-[1.32em] shrink-0 items-center justify-center leading-none"
         aria-hidden
       >
-        <Icon
-          name={icon}
-          className="inline-flex h-[1em] w-[1em] items-center justify-center leading-none [&_[data-icon]]:leading-none"
-          style={{ ...SECONDARY_ICON_STYLE, ...iconStyle }}
-        />
+        {iconStyle ? (
+          <ShadowedRotatingIcon
+            name={icon}
+            iconClassName="inline-flex h-[1em] w-[1em] items-center justify-center leading-none [&_[data-icon]]:leading-none"
+            style={SECONDARY_ICON_STYLE}
+            motionStyle={iconStyle}
+          />
+        ) : (
+          <Icon
+            name={icon}
+            className="inline-flex h-[1em] w-[1em] items-center justify-center leading-none [&_[data-icon]]:leading-none"
+            style={SECONDARY_ICON_STYLE}
+          />
+        )}
       </span>
       <span
         className="text-big inline-flex min-w-0 items-center justify-self-start pr-[0.42em] leading-none"
@@ -146,7 +212,7 @@ export const WeatherConditionCard = forwardRef<
           />
           {showMainTemp && (
             <div
-              className="text-huge flex min-w-0 items-center justify-center font-normal leading-none"
+              className="text-huge flex min-w-0 items-center justify-center leading-none font-normal"
               style={TEMPERATURE_STYLE}
             >
               {formatNumeric(temp)}°
@@ -184,12 +250,21 @@ export const WeatherConditionCard = forwardRef<
               className="flex w-[1.15em] justify-center"
               style={SECONDARY_VALUE_STYLE}
             >
-              <Icon
-                name="solid:fan"
-                className="text-big inline-block"
-                style={{ ...SECONDARY_ICON_STYLE, ...fanStyle }}
-                aria-hidden
-              />
+              {fanStyle ? (
+                <ShadowedRotatingIcon
+                  name="solid:fan"
+                  iconClassName="inline-block"
+                  style={SECONDARY_ICON_STYLE}
+                  motionStyle={fanStyle}
+                />
+              ) : (
+                <Icon
+                  name="solid:fan"
+                  className="text-big inline-block"
+                  style={SECONDARY_ICON_STYLE}
+                  aria-hidden
+                />
+              )}
             </div>
             <div
               className="text-big flex items-center gap-1 justify-self-start leading-none"
@@ -197,15 +272,15 @@ export const WeatherConditionCard = forwardRef<
             >
               {formatNumeric(windNum)}
               {windDirection != null && windNum > 0 && (
-                <span
-                  className="inline-block text-[0.42em]"
-                  style={{
+                <ShadowedRotatingIcon
+                  name="arrow-up"
+                  wrapperClassName="text-[0.42em]"
+                  motionStyle={{
                     transform: `rotate(${windDirection}deg)`,
                   }}
-                  aria-label={`From ${degreesToCardinal(windDirection)}`}
-                >
-                  <Icon name="arrow-up" />
-                </span>
+                  ariaHidden={false}
+                  ariaLabel={`From ${degreesToCardinal(windDirection)}`}
+                />
               )}
             </div>
           </div>
@@ -227,15 +302,15 @@ export const WeatherConditionCard = forwardRef<
               >
                 {formatNumeric(windNum)}
                 {windDirection != null && (
-                  <span
-                    className="ml-1 inline-block text-[0.58em]"
-                    style={{
+                  <ShadowedRotatingIcon
+                    name="arrow-up"
+                    wrapperClassName="ml-1 text-[0.58em]"
+                    motionStyle={{
                       transform: `rotate(${windDirection}deg)`,
                     }}
-                    aria-label={`From ${degreesToCardinal(windDirection)}`}
-                  >
-                    <Icon name="arrow-up" />
-                  </span>
+                    ariaHidden={false}
+                    ariaLabel={`From ${degreesToCardinal(windDirection)}`}
+                  />
                 )}
               </MetricBadge>
             )}
