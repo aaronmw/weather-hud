@@ -12,7 +12,6 @@ import {
   CHART_TIME_ROW_HEIGHT_PX,
   CHART_TIME_ROW_PADDING_V_PX,
   CHART_TOP_RESERVE_PX,
-  LABEL_OPACITY_STEP_PCT,
   NUM_FORECASTED_HOURS,
 } from '@/lib/config'
 import type { HourlyForecast } from '@/lib/ec-weather'
@@ -417,10 +416,6 @@ export function TemperatureCurveChart({
               {labelData.map((d, i) => {
                 const col = columns[i]
                 const cx = col.x + col.width / 2
-                const opacity = Math.max(
-                  0,
-                  (100 - i * LABEL_OPACITY_STEP_PCT) / 100,
-                )
                 return (
                   <text
                     key={d.key}
@@ -430,7 +425,6 @@ export function TemperatureCurveChart({
                     dominantBaseline="central"
                     className="text-small fill-white"
                     style={{
-                      opacity,
                       fontWeight: d.isToday ? 'bold' : undefined,
                     }}
                   >

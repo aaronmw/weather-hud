@@ -30,22 +30,37 @@
   font-family: var(--font-body);
 }
 
+@utility text-shadow-big {
+  text-shadow: 0 2px 1px black;
+}
+
+@utility text-shadow-huge {
+  text-shadow: 0 4px 2px black;
+}
+
+@utility text-shadow-small {
+  text-shadow: 0 1px 0 black;
+}
+
 @utility text-big {
   @apply text-[2.4rem];
   @apply leading-[1em];
   @apply font-bold;
+  @apply text-shadow-big;
 }
 
 @utility text-huge {
   @apply text-[5.4rem];
   @apply leading-[1em];
   @apply font-bold;
+  @apply text-shadow-huge;
 }
 
 @utility text-small {
   @apply text-[2rem];
   @apply leading-[1em];
   @apply font-bold;
+  @apply text-shadow-small;
 }
 
 html {

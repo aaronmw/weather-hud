@@ -9,10 +9,14 @@ import { twJoin } from 'tailwind-merge'
 const AIR_METERS_PER_FAN_REVOLUTION = 10
 const MIN_FAN_ROTATION_DURATION_SECONDS = 0.45
 const MAX_FAN_ROTATION_DURATION_SECONDS = 8
-const CONDITION_ICON_STYLE: CSSProperties = { fontSize: 'min(9.6vh, 40.8cqw)' }
-const TEMPERATURE_STYLE: CSSProperties = { fontSize: 'min(9.6vh, 50.4cqw)' }
+const CONDITION_ICON_STYLE: CSSProperties = {
+  fontSize: 'min(11.52vh, 48.96cqw)',
+}
+const TEMPERATURE_STYLE: CSSProperties = {
+  fontSize: 'min(11.52vh, 60.48cqw)',
+}
 const CONDITION_ONLY_ICON_STYLE: CSSProperties = {
-  fontSize: 'min(9.6vh, 72cqw)',
+  fontSize: 'min(11.52vh, 86.4cqw)',
 }
 const SECONDARY_ICON_STYLE: CSSProperties = { fontSize: 'min(6.4vh, 27.2cqw)' }
 const SECONDARY_VALUE_STYLE: CSSProperties = {
@@ -95,6 +99,7 @@ export const WeatherConditionCard = forwardRef<
         >
           <Icon
             name={getConditionIcon(iconCode, 'solid')}
+            className="text-huge"
             style={
               showMainTemp ? CONDITION_ICON_STYLE : CONDITION_ONLY_ICON_STYLE
             }
@@ -102,7 +107,7 @@ export const WeatherConditionCard = forwardRef<
           />
           {showMainTemp && (
             <div
-              className="flex min-w-0 items-center justify-center leading-none"
+              className="text-huge flex min-w-0 items-center justify-center leading-none"
               style={TEMPERATURE_STYLE}
             >
               {formatNumeric(temp)}°
@@ -116,11 +121,12 @@ export const WeatherConditionCard = forwardRef<
               <div className="flex items-center gap-[3cqw]">
                 <Icon
                   name="solid:raindrops"
+                  className="text-big"
                   style={SECONDARY_ICON_STYLE}
                   aria-hidden
                 />
                 <div
-                  className="leading-none"
+                  className="text-big leading-none"
                   style={SECONDARY_VALUE_STYLE}
                 >
                   {popText}
@@ -130,12 +136,12 @@ export const WeatherConditionCard = forwardRef<
             <div className="flex items-center gap-[3cqw]">
               <Icon
                 name="solid:fan"
-                className="inline-block"
+                className="text-big inline-block"
                 style={{ ...SECONDARY_ICON_STYLE, ...fanStyle }}
                 aria-hidden
               />
               <div
-                className="flex items-center gap-1 leading-none"
+                className="text-big flex items-center gap-1 leading-none"
                 style={SECONDARY_VALUE_STYLE}
               >
                 {formatNumeric(windNum)}
@@ -162,10 +168,10 @@ export const WeatherConditionCard = forwardRef<
               >
                 <Icon
                   name="solid:raindrops"
-                  className="text-[0.8em]"
+                  className="text-shadow-big text-[0.8em]"
                   aria-hidden
                 />
-                {popText}
+                <span className="text-big">{popText}</span>
               </div>
             )}
             {showWindBadge && (
@@ -175,11 +181,11 @@ export const WeatherConditionCard = forwardRef<
               >
                 <Icon
                   name="solid:fan"
-                  className="inline-block text-[0.8em]"
+                  className="text-shadow-big inline-block text-[0.8em]"
                   style={fanStyle}
                   aria-hidden
                 />
-                {formatNumeric(windNum)}
+                <span className="text-big">{formatNumeric(windNum)}</span>
                 {windDirection != null && (
                   <span
                     className="inline-block text-[0.58em]"

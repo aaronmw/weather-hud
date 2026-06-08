@@ -6,7 +6,7 @@ export const DEFAULT_PROVINCE = 'AB'
 export const CANMORE_LAT = 51.09
 export const CANMORE_LNG = -115.36
 export const CANMORE_TZ = 'America/Edmonton'
-export const BURN_IN_SCALE_DURATION_MS = 60_000
+export const BURN_IN_BOUNCE_SPEED_PX_PER_SECOND = 4
 export const NUM_FORECASTED_HOURS = 6
 
 export const WIND_THRESHOLD_LOW_KMH = 20
