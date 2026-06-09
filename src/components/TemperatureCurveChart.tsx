@@ -26,8 +26,114 @@ const HIGH_WIND_THRESHOLD_KMH = 20
 const POP_DISPLAY_THRESHOLD_PCT = 20
 const TIME_LABEL_STYLE = { fontSize: 'min(6.4vh, 33.6cqw)' }
 
-type ConditionKind = 'sun' | 'rain' | 'snow' | 'cloud' | 'storm'
-type MixedConditionDirection = 'sun-forward' | 'cloud-forward'
+interface ColumnSceneRun {
+  src: string
+  startIndex: number
+  endIndex: number
+}
+
+type ConditionSceneMatch = 'all' | string[]
+type ConditionSceneTime = 'day' | 'night' | 'both'
+
+interface ConditionSceneRule {
+  conditions: ConditionSceneMatch
+  dayOrNight: ConditionSceneTime
+  layers: string[]
+}
+
+const CONDITION_SCENES: ConditionSceneRule[] = [
+  {
+    conditions: 'all',
+    dayOrNight: 'night',
+    layers: ['/night.png'],
+  },
+  {
+    conditions: 'all',
+    dayOrNight: 'day',
+    layers: ['/day.png'],
+  },
+  {
+    conditions: [
+      '01',
+      '02',
+      '03',
+      '04',
+      '05',
+      '06',
+      '07',
+      '08',
+      '09',
+      '10',
+      '11',
+      '12',
+      '13',
+      '14',
+      '19',
+      '20',
+      '21',
+      '22',
+      '23',
+      '24',
+      '25',
+      '26',
+      '27',
+      '28',
+      '29',
+      '32',
+      '33',
+      '34',
+      '35',
+      '36',
+      '37',
+      '38',
+      '39',
+      '40',
+      '41',
+      '42',
+      '43',
+      '47',
+    ],
+    dayOrNight: 'both',
+    layers: ['/clouds.png'],
+  },
+  {
+    conditions: [
+      '06',
+      '07',
+      '09',
+      '12',
+      '13',
+      '14',
+      '15',
+      '19',
+      '26',
+      '27',
+      '28',
+      '29',
+      '39',
+      '40',
+      '41',
+      '42',
+      '43',
+      '44',
+      '45',
+      '46',
+      '47',
+    ],
+    dayOrNight: 'both',
+    layers: ['/rain.png'],
+  },
+]
+
+const ORDERED_SCENE_LAYER_SOURCES = CONDITION_SCENES.reduce<string[]>(
+  (sources, rule) => {
+    for (const src of rule.layers) {
+      if (!sources.includes(src)) sources.push(src)
+    }
+    return sources
+  },
+  [],
+)
 
 interface LabelDatum {
   key: number
@@ -88,69 +194,55 @@ function isDaylightAt(date: Date): boolean {
   return time >= sunrise.getTime() && time < sunset.getTime()
 }
 
-function conditionKindsForIcon(code: string): ConditionKind[] {
-  if (['39', '40', '41', '42', '43', '44', '45', '46', '47'].includes(code)) {
-    return ['storm']
-  }
-  if (['07', '08', '15', '16', '17', '18'].includes(code)) {
-    return ['snow']
-  }
-  if (['09', '10', '11', '12', '13', '14', '19'].includes(code)) {
-    return ['rain']
-  }
-  if (['00', '30', '31'].includes(code)) return ['sun']
-  if (['01', '02', '03', '32'].includes(code)) return ['sun', 'cloud']
-  return ['cloud']
+function sceneRuleMatchesTime(
+  ruleTime: ConditionSceneTime,
+  isDaylight: boolean,
+): boolean {
+  return (
+    ruleTime === 'both' ||
+    (ruleTime === 'day' && isDaylight) ||
+    (ruleTime === 'night' && !isDaylight)
+  )
 }
 
-function mixedConditionDirectionForIcon(
-  code: string,
-): MixedConditionDirection | null {
-  if (['01', '02', '32'].includes(code)) return 'sun-forward'
-  if (code === '03') return 'cloud-forward'
-  return null
+function sceneRuleMatchesCondition(
+  ruleConditions: ConditionSceneMatch,
+  iconCode: string,
+): boolean {
+  return ruleConditions === 'all' || ruleConditions.includes(iconCode)
 }
 
-function conditionColor(kind: ConditionKind): string {
-  switch (kind) {
-    case 'sun':
-      return '#c98200'
-    case 'rain':
-      return '#073a67'
-    case 'snow':
-      return '#8fb6d8'
-    case 'storm':
-      return '#25154f'
-    case 'cloud':
-      return '#313131'
-  }
+function getColumnSceneLayerSources(label: LabelDatum): string[] {
+  return CONDITION_SCENES.flatMap((rule) =>
+    sceneRuleMatchesTime(rule.dayOrNight, label.isDaylight) &&
+    sceneRuleMatchesCondition(rule.conditions, label.iconCode)
+      ? rule.layers
+      : [],
+  )
 }
 
-function getColumnBaseColor(isDaylight: boolean): string {
-  return isDaylight ? conditionColor('sun') : 'var(--color-night)'
-}
+function getColumnSceneRuns(labelData: LabelDatum[]): ColumnSceneRun[] {
+  const layerSets = labelData.map((label) => {
+    return new Set(getColumnSceneLayerSources(label))
+  })
 
-function getLightOverlay(baseColor: string): string {
-  return `linear-gradient(to bottom, transparent 0%, color-mix(in srgb, ${baseColor} 50%, white 50%) 50%, transparent 100%)`
-}
-
-function getColumnBackground(iconCode: string, isDaylight: boolean): string {
-  const baseColor = getColumnBaseColor(isDaylight)
-  const mixedDirection = mixedConditionDirectionForIcon(iconCode)
-  if (mixedDirection) {
-    const cloudColor = conditionColor('cloud')
-    return mixedDirection === 'sun-forward'
-      ? baseColor
-      : `linear-gradient(to bottom, color-mix(in srgb, ${cloudColor} 20%, transparent) 0%, transparent 50%, color-mix(in srgb, ${cloudColor} 20%, transparent) 100%), ${baseColor}`
-  }
-  const kinds = conditionKindsForIcon(iconCode)
-  const colors = kinds.map(conditionColor)
-  if (kinds.length === 1 && kinds[0] === 'sun')
-    return `${getLightOverlay(baseColor)}, ${baseColor}`
-  if (kinds.length === 1 && kinds[0] === 'rain')
-    return `linear-gradient(to bottom, ${conditionColor('rain')} 0%, color-mix(in srgb, ${conditionColor('rain')} 50%, ${baseColor} 50%) 50%, ${conditionColor('rain')} 100%), ${baseColor}`
-  if (colors.length === 1) return colors[0]
-  return `linear-gradient(to bottom, ${colors[0]} 0%, ${colors[1]} 100%)`
+  return ORDERED_SCENE_LAYER_SOURCES.flatMap((src) => {
+    const runs: ColumnSceneRun[] = []
+    let index = 0
+    while (index < layerSets.length) {
+      if (!layerSets[index].has(src)) {
+        index += 1
+        continue
+      }
+      const startIndex = index
+      while (index + 1 < layerSets.length && layerSets[index + 1].has(src)) {
+        index += 1
+      }
+      runs.push({ src, startIndex, endIndex: index })
+      index += 1
+    }
+    return runs
+  })
 }
 
 function computeLayout(
@@ -381,6 +473,7 @@ export function TemperatureCurveChart({
   const columns = layout
     ? getColumnLayout(layout.chartWidth, labelData.length, CHART_GAP_X)
     : []
+  const sceneRuns = layout ? getColumnSceneRuns(labelData) : []
 
   function renderCard(label: LabelDatum, forMeasure: boolean, index: number) {
     const card = (
@@ -418,19 +511,20 @@ export function TemperatureCurveChart({
           className="pointer-events-none absolute inset-0 z-0"
           aria-hidden
         >
-          {labelData.map((label, i) => {
-            const col = columns[i]
+          {sceneRuns.map((run) => {
+            const firstCol = columns[run.startIndex]
+            const lastCol = columns[run.endIndex]
             return (
               <div
-                key={label.key}
+                key={`${run.src}-${run.startIndex}-${run.endIndex}`}
                 className="absolute top-0 bottom-0"
                 style={{
-                  left: col.x,
-                  width: col.width,
-                  background: getColumnBackground(
-                    label.iconCode,
-                    label.isDaylight,
-                  ),
+                  left: firstCol.x,
+                  width: lastCol.x + lastCol.width - firstCol.x,
+                  backgroundImage: `url("${run.src}")`,
+                  backgroundPosition: 'top left',
+                  backgroundRepeat: 'repeat-x',
+                  backgroundSize: 'auto 100%',
                 }}
               />
             )
