@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/aaronwright/Dev/weather-hud log --oneline -20)",
+      "Bash(git -C /Users/aaronwright/Dev/weather-hud diff HEAD~5..HEAD --stat)",
+      "WebSearch",
+      "WebFetch(domain:dd.weather.gc.ca)",
+      "WebFetch(domain:eccc-msc.github.io)",
+      "Bash(node -e:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsx:*)"
+    ]
+  }
+}

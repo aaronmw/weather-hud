@@ -10,17 +10,19 @@ const AIR_METERS_PER_FAN_REVOLUTION = 10
 const MIN_FAN_ROTATION_DURATION_SECONDS = 0.45
 const MAX_FAN_ROTATION_DURATION_SECONDS = 8
 const CONDITION_ICON_STYLE: CSSProperties = {
-  fontSize: 'min(13.824vh, 58.752cqw)',
+  fontSize: 'min(12.4416vh, 52.8768cqw)',
 }
 const TEMPERATURE_STYLE: CSSProperties = {
-  fontSize: 'min(13.824vh, 72.576cqw)',
+  fontSize: 'min(12.4416vh, 65.3184cqw)',
 }
 const CONDITION_ONLY_ICON_STYLE: CSSProperties = {
-  fontSize: 'min(13.824vh, 103.68cqw)',
+  fontSize: 'min(12.4416vh, 93.312cqw)',
 }
-const SECONDARY_ICON_STYLE: CSSProperties = { fontSize: 'min(6.4vh, 27.2cqw)' }
+const SECONDARY_ICON_STYLE: CSSProperties = {
+  fontSize: 'min(5.76vh, 24.48cqw)',
+}
 const SECONDARY_VALUE_STYLE: CSSProperties = {
-  fontSize: 'min(6.4vh, 33.6cqw)',
+  fontSize: 'min(5.76vh, 30.24cqw)',
 }
 const POP_DISPLAY_THRESHOLD_PCT = 20
 
@@ -63,9 +65,9 @@ function ShadowedRotatingIcon({
   }
   const shadowStyle: CSSProperties = {
     ...iconStyle,
-    color: 'black',
-    filter: 'blur(2px)',
-    translate: '4px 4px',
+    color: 'var(--hud-fan-shadow-color)',
+    filter: 'blur(var(--hud-fan-shadow-blur))',
+    translate: 'var(--hud-fan-shadow-x) var(--hud-fan-shadow-y)',
   }
 
   return (
@@ -103,20 +105,20 @@ function MetricBadge({ icon, iconStyle, tone, children }: MetricBadgeProps) {
       style={SECONDARY_VALUE_STYLE}
     >
       <span
-        className="text-shadow-big inline-flex aspect-square h-[1.32em] shrink-0 items-center justify-center leading-none"
+        className="text-shadow-big inline-flex h-[1.5em] w-[1.5em] shrink-0 items-center justify-center leading-none"
         aria-hidden
       >
         {iconStyle ? (
           <ShadowedRotatingIcon
             name={icon}
-            iconClassName="inline-flex h-[1em] w-[1em] items-center justify-center leading-none [&_[data-icon]]:leading-none"
+            iconClassName="inline-flex h-full w-full items-center justify-center leading-none [&_[data-icon]]:leading-none"
             style={SECONDARY_ICON_STYLE}
             motionStyle={iconStyle}
           />
         ) : (
           <Icon
             name={icon}
-            className="inline-flex h-[1em] w-[1em] items-center justify-center leading-none [&_[data-icon]]:leading-none"
+            className="inline-flex h-full w-full items-center justify-center leading-none [&_[data-icon]]:leading-none"
             style={SECONDARY_ICON_STYLE}
           />
         )}

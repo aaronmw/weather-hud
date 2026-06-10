@@ -19,6 +19,8 @@ type DevPanelProps = {
   onWindSpeedOffsetChange: (delta: number) => void
   popOffset: number
   onPopOffsetChange: (delta: number) => void
+  textShadow: string
+  onTextShadowChange: (textShadow: string) => void
 }
 
 export function DevPanel({
@@ -34,6 +36,8 @@ export function DevPanel({
   onWindSpeedOffsetChange,
   popOffset,
   onPopOffsetChange,
+  textShadow,
+  onTextShadowChange,
 }: DevPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const cogRef = useRef<HTMLButtonElement>(null)
@@ -190,6 +194,24 @@ export function DevPanel({
                 +
               </button>
             </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="dev-text-shadow"
+              className="text-sm opacity-80"
+            >
+              Text shadow
+            </label>
+            <input
+              id="dev-text-shadow"
+              type="text"
+              value={textShadow}
+              onChange={(event) => onTextShadowChange(event.target.value)}
+              spellCheck={false}
+              autoCapitalize="off"
+              autoCorrect="off"
+              className="border-foreground/30 bg-background text-foreground focus:border-foreground/70 h-9 w-full rounded border px-2 font-mono text-xs outline-none transition-colors"
+            />
           </div>
           <div className="flex flex-col gap-2">
             <span className="text-sm opacity-80">POP offset</span>

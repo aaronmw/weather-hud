@@ -1,6 +1,14 @@
 'use client'
 
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import Image from 'next/image'
+import {
+  type ReactElement,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { WeatherConditionCard } from '@/components/WeatherConditionCard'
 import {
   CANMORE_TZ,
@@ -19,15 +27,34 @@ import {
 import type { HourlyForecast } from '@/lib/ec-weather'
 import { formatNumeric } from '@/lib/format'
 import { getSunTimes } from '@/lib/sun'
+import { twJoin } from 'tailwind-merge'
 
 const K_MAX_ITERATIONS = 20
 const K_EPS = 1e-3
 const HIGH_WIND_THRESHOLD_KMH = 20
 const POP_DISPLAY_THRESHOLD_PCT = 20
-const TIME_LABEL_STYLE = { fontSize: 'min(6.4vh, 33.6cqw)' }
+const TIME_LABEL_STYLE = { fontSize: 'min(5.76vh, 30.24cqw)' }
+const DAY_NIGHT_TILE_COUNT = 16
+const DAY_NIGHT_TILE_WIDTH_CQH = (588 / 1954) * 100
+const CLOUD_LAYER_WIDTH_CQH = (2782 / 1954) * 100
+const CLOUD_DRIFT_DURATION_SECONDS = 150
+
+const CLOUD_DRIFT_SPRITES = [
+  { id: 'base', timelineOffsetPercent: 50 },
+  {
+    id: 'bottom-right-small',
+    scaleClassName: 'origin-bottom-right scale-30',
+    timelineOffsetPercent: 25,
+  },
+  {
+    id: 'top-left-small',
+    scaleClassName: 'origin-top-left scale-55',
+    timelineOffsetPercent: 75,
+  },
+]
 
 interface ColumnSceneRun {
-  src: string
+  layer: SceneLayerDefinition
   startIndex: number
   endIndex: number
 }
@@ -35,22 +62,139 @@ interface ColumnSceneRun {
 type ConditionSceneMatch = 'all' | string[]
 type ConditionSceneTime = 'day' | 'night' | 'both'
 
+interface SceneLayerDefinition {
+  id: string
+  element: ReactElement
+}
+
 interface ConditionSceneRule {
   conditions: ConditionSceneMatch
   dayOrNight: ConditionSceneTime
-  layers: string[]
+  layers: SceneLayerDefinition[]
 }
+
+function TiledSceneLayer({ src }: { src: string }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden [container-type:size]">
+      {Array.from({ length: DAY_NIGHT_TILE_COUNT }, (_, index) => (
+        <span
+          key={index}
+          className="absolute top-0 bottom-0"
+          style={{
+            left: `calc(${index} * ${DAY_NIGHT_TILE_WIDTH_CQH}cqh)`,
+            width: `${DAY_NIGHT_TILE_WIDTH_CQH}cqh`,
+          }}
+        >
+          <Image
+            src={src}
+            alt=""
+            fill
+            sizes={`${DAY_NIGHT_TILE_WIDTH_CQH}cqh`}
+            className="object-fill"
+          />
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function CloudDriftSprite({
+  scaleClassName,
+  timelineOffsetPercent,
+}: {
+  scaleClassName?: string
+  timelineOffsetPercent: number
+}) {
+  return (
+    <span
+      className="weather-cloud-drift absolute top-0 bottom-0"
+      style={{
+        animationDelay: `-${(CLOUD_DRIFT_DURATION_SECONDS * timelineOffsetPercent) / 100}s`,
+        width: `${CLOUD_LAYER_WIDTH_CQH}cqh`,
+      }}
+    >
+      <span className={twJoin('absolute inset-0', scaleClassName)}>
+        <Image
+          src="/clouds.png"
+          alt=""
+          fill
+          sizes={`${CLOUD_LAYER_WIDTH_CQH}cqh`}
+          className="object-fill"
+        />
+      </span>
+    </span>
+  )
+}
+
+function CloudSceneLayer() {
+  return (
+    <div className="weather-cloud-fade-in absolute inset-0 overflow-hidden [container-type:size]">
+      {[0, 50].flatMap((phaseOffset) =>
+        CLOUD_DRIFT_SPRITES.map((sprite) => (
+          <CloudDriftSprite
+            key={`${sprite.id}-${phaseOffset}`}
+            scaleClassName={sprite.scaleClassName}
+            timelineOffsetPercent={
+              (sprite.timelineOffsetPercent + phaseOffset) % 100
+            }
+          />
+        )),
+      )}
+    </div>
+  )
+}
+
+function RainSceneLayer() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <Image
+        src="/rain.png"
+        alt=""
+        fill
+        sizes="100vw"
+        className="weather-rain-fall object-cover"
+      />
+      <Image
+        src="/rain.png"
+        alt=""
+        fill
+        sizes="100vw"
+        className="weather-rain-fall object-cover"
+        style={{ animationDelay: '-1.75s' }}
+      />
+    </div>
+  )
+}
+
+const SCENE_LAYERS = {
+  night: {
+    id: 'night',
+    element: <TiledSceneLayer src="/night.png" />,
+  },
+  day: {
+    id: 'day',
+    element: <TiledSceneLayer src="/day.png" />,
+  },
+  clouds: {
+    id: 'clouds',
+    element: <CloudSceneLayer />,
+  },
+  rain: {
+    id: 'rain',
+    element: <RainSceneLayer />,
+  },
+} satisfies Record<string, SceneLayerDefinition>
 
 const CONDITION_SCENES: ConditionSceneRule[] = [
   {
     conditions: 'all',
     dayOrNight: 'night',
-    layers: ['/night.png'],
+    layers: [SCENE_LAYERS.night],
   },
   {
     conditions: 'all',
     dayOrNight: 'day',
-    layers: ['/day.png'],
+    layers: [SCENE_LAYERS.day],
   },
   {
     conditions: [
@@ -94,7 +238,7 @@ const CONDITION_SCENES: ConditionSceneRule[] = [
       '47',
     ],
     dayOrNight: 'both',
-    layers: ['/clouds.png'],
+    layers: [SCENE_LAYERS.clouds],
   },
   {
     conditions: [
@@ -121,16 +265,18 @@ const CONDITION_SCENES: ConditionSceneRule[] = [
       '47',
     ],
     dayOrNight: 'both',
-    layers: ['/rain.png'],
+    layers: [SCENE_LAYERS.rain],
   },
 ]
 
-const ORDERED_SCENE_LAYER_SOURCES = CONDITION_SCENES.reduce<string[]>(
-  (sources, rule) => {
-    for (const src of rule.layers) {
-      if (!sources.includes(src)) sources.push(src)
+const ORDERED_SCENE_LAYERS = CONDITION_SCENES.reduce<SceneLayerDefinition[]>(
+  (layers, rule) => {
+    for (const layer of rule.layers) {
+      if (!layers.some((candidate) => candidate.id === layer.id)) {
+        layers.push(layer)
+      }
     }
-    return sources
+    return layers
   },
   [],
 )
@@ -212,7 +358,7 @@ function sceneRuleMatchesCondition(
   return ruleConditions === 'all' || ruleConditions.includes(iconCode)
 }
 
-function getColumnSceneLayerSources(label: LabelDatum): string[] {
+function getColumnSceneLayers(label: LabelDatum): SceneLayerDefinition[] {
   return CONDITION_SCENES.flatMap((rule) =>
     sceneRuleMatchesTime(rule.dayOrNight, label.isDaylight) &&
     sceneRuleMatchesCondition(rule.conditions, label.iconCode)
@@ -223,22 +369,25 @@ function getColumnSceneLayerSources(label: LabelDatum): string[] {
 
 function getColumnSceneRuns(labelData: LabelDatum[]): ColumnSceneRun[] {
   const layerSets = labelData.map((label) => {
-    return new Set(getColumnSceneLayerSources(label))
+    return new Set(getColumnSceneLayers(label).map((layer) => layer.id))
   })
 
-  return ORDERED_SCENE_LAYER_SOURCES.flatMap((src) => {
+  return ORDERED_SCENE_LAYERS.flatMap((layer) => {
     const runs: ColumnSceneRun[] = []
     let index = 0
     while (index < layerSets.length) {
-      if (!layerSets[index].has(src)) {
+      if (!layerSets[index].has(layer.id)) {
         index += 1
         continue
       }
       const startIndex = index
-      while (index + 1 < layerSets.length && layerSets[index + 1].has(src)) {
+      while (
+        index + 1 < layerSets.length &&
+        layerSets[index + 1].has(layer.id)
+      ) {
         index += 1
       }
-      runs.push({ src, startIndex, endIndex: index })
+      runs.push({ layer, startIndex, endIndex: index })
       index += 1
     }
     return runs
@@ -516,17 +665,15 @@ export function TemperatureCurveChart({
             const lastCol = columns[run.endIndex]
             return (
               <div
-                key={`${run.src}-${run.startIndex}-${run.endIndex}`}
-                className="absolute top-0 bottom-0"
+                key={`${run.layer.id}-${run.startIndex}-${run.endIndex}`}
+                className="absolute top-0 bottom-0 overflow-hidden"
                 style={{
                   left: firstCol.x,
                   width: lastCol.x + lastCol.width - firstCol.x,
-                  backgroundImage: `url("${run.src}")`,
-                  backgroundPosition: 'top left',
-                  backgroundRepeat: 'repeat-x',
-                  backgroundSize: 'auto 100%',
                 }}
-              />
+              >
+                {run.layer.element}
+              </div>
             )
           })}
         </div>

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
-import { Atkinson_Hyperlegible_Next } from 'next/font/google'
+import { Inter_Tight } from 'next/font/google'
 import Script from 'next/script'
 import './globals.css'
 
-const atkinsonHyperlegible = Atkinson_Hyperlegible_Next({
+const interTight = Inter_Tight({
   variable: '--font-body',
   subsets: ['latin'],
   weight: ['400', '600'],
@@ -31,9 +31,7 @@ export default function RootLayout({
           strategy="afterInteractive"
         />
       </head>
-      <body
-        className={`${atkinsonHyperlegible.variable} font-semibold antialiased`}
-      >
+      <body className={`${interTight.variable} font-semibold antialiased`}>
         {children}
       </body>
     </html>

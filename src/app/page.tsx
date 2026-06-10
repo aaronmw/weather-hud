@@ -22,6 +22,19 @@ const POP_MIN_PCT = 0
 const POP_MAX_PCT = 100
 const DEV_CONDITION_CODES = ['00', '01', '02', '03', '10', '12', '16', '39']
 const DEV_CONDITION_WEIGHTS = [10, 16, 24, 16, 12, 14, 5, 3]
+const DEFAULT_TEXT_SHADOW = '0px 5px 20px rgba(0,0,0,0.5)'
+const DEFAULT_FAN_SHADOW_PARTS = {
+  x: '0px',
+  y: '5px',
+  blur: '20px',
+  color: 'rgba(0, 0, 0, 0.5)',
+}
+const NO_FAN_SHADOW_PARTS = {
+  x: '0px',
+  y: '0px',
+  blur: '0px',
+  color: 'transparent',
+}
 const DEV_CONDITION_TRANSITIONS: Record<string, string[]> = {
   '00': ['00', '01', '02'],
   '01': ['00', '01', '02', '03'],
@@ -149,6 +162,51 @@ function logFetchedWeatherData(d: WeatherData): void {
   console.table(rows)
 }
 
+function splitCssShadowLayers(value: string): string[] {
+  const layers: string[] = []
+  let layerStart = 0
+  let depth = 0
+
+  for (let i = 0; i < value.length; i++) {
+    const char = value[i]
+    if (char === '(') depth += 1
+    if (char === ')') depth = Math.max(0, depth - 1)
+    if (char === ',' && depth === 0) {
+      layers.push(value.slice(layerStart, i).trim())
+      layerStart = i + 1
+    }
+  }
+
+  layers.push(value.slice(layerStart).trim())
+  return layers.filter(Boolean)
+}
+
+function getFanShadowParts(textShadow: string): typeof DEFAULT_FAN_SHADOW_PARTS {
+  const probe = document.createElement('span')
+  probe.style.position = 'absolute'
+  probe.style.visibility = 'hidden'
+  probe.style.textShadow = textShadow
+  document.body.append(probe)
+
+  const computedTextShadow = getComputedStyle(probe).textShadow
+  probe.remove()
+
+  const firstLayer = splitCssShadowLayers(computedTextShadow)[0]
+  if (!firstLayer || firstLayer === 'none') return NO_FAN_SHADOW_PARTS
+
+  const lengths = firstLayer.match(/-?\d*\.?\d+px/g) ?? []
+  if (lengths.length < 2) return NO_FAN_SHADOW_PARTS
+
+  return {
+    x: lengths[0] ?? DEFAULT_FAN_SHADOW_PARTS.x,
+    y: lengths[1] ?? DEFAULT_FAN_SHADOW_PARTS.y,
+    blur: lengths[2] ?? '0px',
+    color:
+      firstLayer.replace(/-?\d*\.?\d+px/g, '').trim() ||
+      DEFAULT_FAN_SHADOW_PARTS.color,
+  }
+}
+
 export default function Home() {
   const [data, setData] = useState<WeatherData | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -199,10 +257,32 @@ export default function Home() {
   const [conditionCodeOverrides, setConditionCodeOverrides] = useState<
     (string | null)[]
   >(() => Array(DEV_FORECAST_HOURS).fill(null))
+  const [textShadow, setTextShadow] = useState(DEFAULT_TEXT_SHADOW)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', 'dark')
   }, [])
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--hud-text-shadow', textShadow)
+    const fanShadowParts = getFanShadowParts(textShadow)
+    document.documentElement.style.setProperty(
+      '--hud-fan-shadow-x',
+      fanShadowParts.x,
+    )
+    document.documentElement.style.setProperty(
+      '--hud-fan-shadow-y',
+      fanShadowParts.y,
+    )
+    document.documentElement.style.setProperty(
+      '--hud-fan-shadow-blur',
+      fanShadowParts.blur,
+    )
+    document.documentElement.style.setProperty(
+      '--hud-fan-shadow-color',
+      fanShadowParts.color,
+    )
+  }, [textShadow])
 
   const randomizeForecast = () => {
     if (!data) return
@@ -310,6 +390,8 @@ export default function Home() {
             return next
           })
         }}
+        textShadow={textShadow}
+        onTextShadowChange={setTextShadow}
       />
     ) : null
 
