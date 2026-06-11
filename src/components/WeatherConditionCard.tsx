@@ -134,6 +134,7 @@ function MetricBadge({ icon, iconStyle, tone, children }: MetricBadgeProps) {
 }
 
 export interface WeatherConditionCardData {
+  animated?: boolean
   temp: number
   iconCode: string
   pop: string | null
@@ -152,6 +153,7 @@ export const WeatherConditionCard = forwardRef<
   WeatherConditionCardData
 >(function WeatherConditionCard(
   {
+    animated = true,
     temp,
     iconCode,
     pop,
@@ -170,7 +172,7 @@ export const WeatherConditionCard = forwardRef<
   const showPop = popVal >= POP_DISPLAY_THRESHOLD_PCT
   const fanRotationDuration = getFanRotationDurationSeconds(windNum)
   const fanStyle =
-    fanRotationDuration != null
+    animated && fanRotationDuration != null
       ? {
           animation: `wind-fan-spin ${fanRotationDuration}s linear infinite`,
         }

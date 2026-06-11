@@ -207,11 +207,21 @@ function getFanShadowParts(textShadow: string): typeof DEFAULT_FAN_SHADOW_PARTS 
   }
 }
 
+function areWeatherAnimationsEnabled(search: string): boolean {
+  return new URLSearchParams(search).get('animated') !== 'false'
+}
+
 export default function Home() {
   const [data, setData] = useState<WeatherData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<number | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  const [weatherAnimationsEnabled, setWeatherAnimationsEnabled] = useState(
+    () =>
+      typeof window === 'undefined'
+        ? true
+        : areWeatherAnimationsEnabled(window.location.search),
+  )
 
   const onRefresh = (d: WeatherData) => {
     logFetchedWeatherData(d)
@@ -242,6 +252,18 @@ export default function Home() {
     const id = setInterval(() => setNow(Date.now()), 1000)
     return () => clearInterval(id)
   }, [lastSyncTime])
+
+  useEffect(() => {
+    const syncWeatherAnimationsEnabled = () => {
+      setWeatherAnimationsEnabled(
+        areWeatherAnimationsEnabled(window.location.search),
+      )
+    }
+
+    window.addEventListener('popstate', syncWeatherAnimationsEnabled)
+    return () =>
+      window.removeEventListener('popstate', syncWeatherAnimationsEnabled)
+  }, [])
 
   const [devPanelOpen, setDevPanelOpen] = useState(false)
   const [selectedHour, setSelectedHour] = useState(0)
@@ -457,6 +479,7 @@ export default function Home() {
             className="flex min-h-0 w-full flex-1 overflow-visible"
           >
             <TemperatureCurveChart
+              animated={weatherAnimationsEnabled}
               currentTemp={data.currentTemp + (temperatureOffsets[0] ?? 0)}
               hourlyForecast={data.hourlyForecast.map((h, i) => ({
                 ...h,

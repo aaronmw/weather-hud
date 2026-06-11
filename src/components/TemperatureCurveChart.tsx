@@ -69,7 +69,7 @@ interface ConditionSceneMatchOptions {
 
 interface SceneLayerDefinition {
   id: string
-  element: ReactElement
+  renderElement: (animated: boolean) => ReactElement
 }
 
 interface ConditionSceneRule {
@@ -104,17 +104,24 @@ function TiledSceneLayer({ src }: { src: string }) {
 }
 
 function CloudDriftSprite({
+  animated,
   scaleClassName,
   timelineOffsetPercent,
 }: {
+  animated: boolean
   scaleClassName?: string
   timelineOffsetPercent: number
 }) {
   return (
     <span
-      className="weather-cloud-drift absolute top-0 bottom-0 left-0"
+      className={twJoin(
+        'absolute top-0 bottom-0 left-0',
+        animated && 'weather-cloud-drift',
+      )}
       style={{
-        animationDelay: `-${(CLOUD_DRIFT_DURATION_SECONDS * timelineOffsetPercent) / 100}s`,
+        animationDelay: animated
+          ? `-${(CLOUD_DRIFT_DURATION_SECONDS * timelineOffsetPercent) / 100}s`
+          : undefined,
         width: `${CLOUD_LAYER_WIDTH_CQH}cqh`,
       }}
     >
@@ -131,13 +138,14 @@ function CloudDriftSprite({
   )
 }
 
-function CloudSceneLayer() {
+function CloudSceneLayer({ animated }: { animated: boolean }) {
   return (
     <div className="weather-cloud-fade-in absolute inset-0 overflow-hidden [container-type:size]">
       {[0, 50].flatMap((phaseOffset) =>
         CLOUD_DRIFT_SPRITES.map((sprite) => (
           <CloudDriftSprite
             key={`${sprite.id}-${phaseOffset}`}
+            animated={animated}
             scaleClassName={sprite.scaleClassName}
             timelineOffsetPercent={
               (sprite.timelineOffsetPercent + phaseOffset) % 100
@@ -149,24 +157,31 @@ function CloudSceneLayer() {
   )
 }
 
-function RainSceneLayer() {
+function RainSceneLayer({ animated }: { animated: boolean }) {
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div
+      className={twJoin(
+        'absolute inset-0 overflow-hidden',
+        !animated && 'weather-cloud-fade-in',
+      )}
+    >
       <Image
         src="/rain-low.png"
         alt=""
         fill
         sizes="100vw"
-        className="weather-rain-fall object-cover"
+        className={twJoin(animated && 'weather-rain-fall', 'object-cover')}
       />
-      <Image
-        src="/rain-low.png"
-        alt=""
-        fill
-        sizes="100vw"
-        className="weather-rain-fall object-cover"
-        style={{ animationDelay: '-0.5s' }}
-      />
+      {animated && (
+        <Image
+          src="/rain-low.png"
+          alt=""
+          fill
+          sizes="100vw"
+          className="weather-rain-fall object-cover"
+          style={{ animationDelay: '-0.5s' }}
+        />
+      )}
     </div>
   )
 }
@@ -174,23 +189,23 @@ function RainSceneLayer() {
 const SCENE_LAYERS = {
   night: {
     id: 'night',
-    element: <TiledSceneLayer src="/night.png" />,
+    renderElement: () => <TiledSceneLayer src="/night.png" />,
   },
   day: {
     id: 'day',
-    element: <TiledSceneLayer src="/day.png" />,
+    renderElement: () => <TiledSceneLayer src="/day.png" />,
   },
   dayCloudy: {
     id: 'day-cloudy',
-    element: <TiledSceneLayer src="/day-cloudy.png" />,
+    renderElement: () => <TiledSceneLayer src="/day-cloudy.png" />,
   },
   clouds: {
     id: 'clouds',
-    element: <CloudSceneLayer />,
+    renderElement: (animated) => <CloudSceneLayer animated={animated} />,
   },
   rain: {
     id: 'rain',
-    element: <RainSceneLayer />,
+    renderElement: (animated) => <RainSceneLayer animated={animated} />,
   },
 } satisfies Record<string, SceneLayerDefinition>
 
@@ -315,6 +330,7 @@ interface LabelDatum {
 }
 
 interface TemperatureCurveChartProps {
+  animated?: boolean
   currentTemp: number
   hourlyForecast: HourlyForecast[]
   windSpeed?: number
@@ -479,6 +495,7 @@ function getColumnLayout(
 }
 
 export function TemperatureCurveChart({
+  animated = true,
   currentTemp,
   hourlyForecast,
   windSpeed = 0,
@@ -679,6 +696,7 @@ export function TemperatureCurveChart({
         showTemp={label.showTemp}
         showPopBadge={label.showPopBadge}
         showWindBadge={label.showWindBadge}
+        animated={animated}
       />
     )
     return card
@@ -706,7 +724,7 @@ export function TemperatureCurveChart({
                   width: lastCol.x + lastCol.width - firstCol.x,
                 }}
               >
-                {run.layer.element}
+                {run.layer.renderElement(animated)}
               </div>
             )
           })}
