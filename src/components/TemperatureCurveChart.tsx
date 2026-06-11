@@ -38,6 +38,8 @@ const DAY_NIGHT_TILE_COUNT = 16
 const DAY_NIGHT_TILE_WIDTH_CQH = (588 / 1954) * 100
 const CLOUD_LAYER_WIDTH_CQH = (2782 / 1954) * 100
 const CLOUD_DRIFT_DURATION_SECONDS = 150
+const STARTUP_LAYOUT_POLL_DURATION_MS = 15_000
+const STARTUP_LAYOUT_POLL_INTERVAL_MS = 1_000
 
 const CLOUD_DRIFT_SPRITES = [
   { id: 'base', timelineOffsetPercent: 50 },
@@ -658,11 +660,21 @@ export function TemperatureCurveChart({
     const timeoutIds = [100, 500, 1500].map((delay) =>
       window.setTimeout(scheduleLayout, delay),
     )
+    const startupPollId = window.setInterval(
+      scheduleLayout,
+      STARTUP_LAYOUT_POLL_INTERVAL_MS,
+    )
+    const stopStartupPollId = window.setTimeout(
+      () => window.clearInterval(startupPollId),
+      STARTUP_LAYOUT_POLL_DURATION_MS,
+    )
     void document.fonts?.ready.then(scheduleLayout)
     window.addEventListener('resize', scheduleLayout)
     return () => {
       if (frameId != null) cancelAnimationFrame(frameId)
       timeoutIds.forEach((id) => window.clearTimeout(id))
+      window.clearInterval(startupPollId)
+      window.clearTimeout(stopStartupPollId)
       ro.disconnect()
       window.removeEventListener('resize', scheduleLayout)
     }
