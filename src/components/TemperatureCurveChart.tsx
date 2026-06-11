@@ -599,9 +599,9 @@ export function TemperatureCurveChart({
     [labelData],
   )
 
-  useLayoutEffect(() => {
+  const updateLayoutFromMeasurements = useCallback(() => {
     const chartEl = chartAreaRef.current
-    if (!chartEl) return
+    if (!chartEl) return false
     const cardEls = cardRefs.current
     const dims = cardEls.slice(0, labelData.length).map((el) =>
       el
@@ -611,34 +611,45 @@ export function TemperatureCurveChart({
           }
         : { width: 0, height: 0 },
     )
-    if (dims.some((d) => d.height === 0)) return
+    if (dims.some((d) => d.height === 0)) return false
     updateLayout(chartEl, dims)
-  }, [labelData, updateLayout])
+    return true
+  }, [labelData.length, updateLayout])
 
   useLayoutEffect(() => {
     const chartEl = chartAreaRef.current
     if (!chartEl) return
-    const runLayout = () => {
-      const cardEls = cardRefs.current
-      const dims = cardEls.slice(0, labelData.length).map((el) =>
-        el
-          ? {
-              width: el.getBoundingClientRect().width,
-              height: el.getBoundingClientRect().height,
-            }
-          : { width: 0, height: 0 },
-      )
-      if (dims.some((d) => d.height === 0)) return
-      updateLayout(chartEl, dims)
+
+    let frameId: number | null = null
+    const scheduleLayout = () => {
+      if (frameId != null) cancelAnimationFrame(frameId)
+      frameId = requestAnimationFrame(() => {
+        frameId = null
+        updateLayoutFromMeasurements()
+      })
     }
-    const ro = new ResizeObserver(runLayout)
+
+    const ro = new ResizeObserver(scheduleLayout)
     ro.observe(chartEl)
-    window.addEventListener('resize', runLayout)
+    cardRefs.current
+      .slice(0, labelData.length)
+      .forEach((el) => el && ro.observe(el))
+
+    updateLayoutFromMeasurements()
+    scheduleLayout()
+
+    const timeoutIds = [100, 500, 1500].map((delay) =>
+      window.setTimeout(scheduleLayout, delay),
+    )
+    void document.fonts?.ready.then(scheduleLayout)
+    window.addEventListener('resize', scheduleLayout)
     return () => {
+      if (frameId != null) cancelAnimationFrame(frameId)
+      timeoutIds.forEach((id) => window.clearTimeout(id))
       ro.disconnect()
-      window.removeEventListener('resize', runLayout)
+      window.removeEventListener('resize', scheduleLayout)
     }
-  }, [labelData, updateLayout])
+  }, [labelData.length, updateLayoutFromMeasurements])
 
   const firstHeight = layout?.cardDims[0]?.height ?? 0
   const firstTemp = labelData[0]?.temp ?? 0

@@ -43,13 +43,33 @@ export function Icon({
 
   const [iconVariant, iconName] = iconStringToVariantAndName(name)
   const styleClasses = resolveStyleClasses(iconVariant ?? variant ?? undefined)
+  const iconClasses = twMerge(
+    `fa fa-fw fa-${iconName}`,
+    styleClasses,
+    typeof rotate === 'string' && `fa-${rotate}`,
+    typeof rotate === 'number' && `fa-rotate-${rotate}`,
+    spin && `fa-spin`,
+  )
 
   if (!isMounted) {
     return (
       <span
         className={twMerge(`no-underline!`, className)}
         {...otherProps}
-      />
+      >
+        <i
+          aria-hidden
+          className={twMerge(`fa fa-fw fa-${iconName}`, styleClasses)}
+          data-icon-placeholder
+          style={{
+            display: 'inline-block',
+            height: '1em',
+            lineHeight: 1,
+            visibility: 'hidden',
+            width: '1.25em',
+          }}
+        />
+      </span>
     )
   }
 
@@ -61,13 +81,7 @@ export function Icon({
     >
       <i
         data-icon
-        className={twMerge(
-          `fa fa-fw fa-${iconName}`,
-          styleClasses,
-          typeof rotate === 'string' && `fa-${rotate}`,
-          typeof rotate === 'number' && `fa-rotate-${rotate}`,
-          spin && `fa-spin`,
-        )}
+        className={iconClasses}
       />
     </span>
   )
