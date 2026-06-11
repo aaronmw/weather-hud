@@ -59,8 +59,13 @@ interface ColumnSceneRun {
   endIndex: number
 }
 
-type ConditionSceneMatch = 'all' | string[]
+type ConditionSceneMatch = 'all' | string[] | ConditionSceneMatchOptions
 type ConditionSceneTime = 'day' | 'night' | 'both'
+
+interface ConditionSceneMatchOptions {
+  include?: string[]
+  exclude?: string[]
+}
 
 interface SceneLayerDefinition {
   id: string
@@ -107,7 +112,7 @@ function CloudDriftSprite({
 }) {
   return (
     <span
-      className="weather-cloud-drift absolute top-0 bottom-0"
+      className="weather-cloud-drift absolute top-0 bottom-0 left-0"
       style={{
         animationDelay: `-${(CLOUD_DRIFT_DURATION_SECONDS * timelineOffsetPercent) / 100}s`,
         width: `${CLOUD_LAYER_WIDTH_CQH}cqh`,
@@ -115,7 +120,7 @@ function CloudDriftSprite({
     >
       <span className={twJoin('absolute inset-0', scaleClassName)}>
         <Image
-          src="/clouds.png"
+          src="/clouds-low.png"
           alt=""
           fill
           sizes={`${CLOUD_LAYER_WIDTH_CQH}cqh`}
@@ -148,19 +153,19 @@ function RainSceneLayer() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       <Image
-        src="/rain.png"
+        src="/rain-low.png"
         alt=""
         fill
         sizes="100vw"
         className="weather-rain-fall object-cover"
       />
       <Image
-        src="/rain.png"
+        src="/rain-low.png"
         alt=""
         fill
         sizes="100vw"
         className="weather-rain-fall object-cover"
-        style={{ animationDelay: '-1.75s' }}
+        style={{ animationDelay: '-0.5s' }}
       />
     </div>
   )
@@ -175,6 +180,10 @@ const SCENE_LAYERS = {
     id: 'day',
     element: <TiledSceneLayer src="/day.png" />,
   },
+  dayCloudy: {
+    id: 'day-cloudy',
+    element: <TiledSceneLayer src="/day-cloudy.png" />,
+  },
   clouds: {
     id: 'clouds',
     element: <CloudSceneLayer />,
@@ -185,6 +194,47 @@ const SCENE_LAYERS = {
   },
 } satisfies Record<string, SceneLayerDefinition>
 
+const CLOUD_SCENE_CONDITION_CODES = [
+  '01',
+  '02',
+  '03',
+  '04',
+  '05',
+  '06',
+  '07',
+  '08',
+  '09',
+  '10',
+  '11',
+  '12',
+  '13',
+  '14',
+  '19',
+  '20',
+  '21',
+  '22',
+  '23',
+  '24',
+  '25',
+  '26',
+  '27',
+  '28',
+  '29',
+  '32',
+  '33',
+  '34',
+  '35',
+  '36',
+  '37',
+  '38',
+  '39',
+  '40',
+  '41',
+  '42',
+  '43',
+  '47',
+]
+
 const CONDITION_SCENES: ConditionSceneRule[] = [
   {
     conditions: 'all',
@@ -192,51 +242,17 @@ const CONDITION_SCENES: ConditionSceneRule[] = [
     layers: [SCENE_LAYERS.night],
   },
   {
-    conditions: 'all',
+    conditions: { exclude: CLOUD_SCENE_CONDITION_CODES },
     dayOrNight: 'day',
     layers: [SCENE_LAYERS.day],
   },
   {
-    conditions: [
-      '01',
-      '02',
-      '03',
-      '04',
-      '05',
-      '06',
-      '07',
-      '08',
-      '09',
-      '10',
-      '11',
-      '12',
-      '13',
-      '14',
-      '19',
-      '20',
-      '21',
-      '22',
-      '23',
-      '24',
-      '25',
-      '26',
-      '27',
-      '28',
-      '29',
-      '32',
-      '33',
-      '34',
-      '35',
-      '36',
-      '37',
-      '38',
-      '39',
-      '40',
-      '41',
-      '42',
-      '43',
-      '47',
-    ],
+    conditions: CLOUD_SCENE_CONDITION_CODES,
+    dayOrNight: 'day',
+    layers: [SCENE_LAYERS.dayCloudy],
+  },
+  {
+    conditions: CLOUD_SCENE_CONDITION_CODES,
     dayOrNight: 'both',
     layers: [SCENE_LAYERS.clouds],
   },
@@ -355,7 +371,14 @@ function sceneRuleMatchesCondition(
   ruleConditions: ConditionSceneMatch,
   iconCode: string,
 ): boolean {
-  return ruleConditions === 'all' || ruleConditions.includes(iconCode)
+  if (ruleConditions === 'all') return true
+  if (Array.isArray(ruleConditions)) return ruleConditions.includes(iconCode)
+  return (
+    (ruleConditions.include == null ||
+      ruleConditions.include.includes(iconCode)) &&
+    (ruleConditions.exclude == null ||
+      !ruleConditions.exclude.includes(iconCode))
+  )
 }
 
 function getColumnSceneLayers(label: LabelDatum): SceneLayerDefinition[] {

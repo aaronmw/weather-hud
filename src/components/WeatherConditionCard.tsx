@@ -176,6 +176,8 @@ export const WeatherConditionCard = forwardRef<
         }
       : undefined
   const showMainTemp = isPrimaryColumn || showTemp
+  const showPopMetricBadge = isPrimaryColumn ? showPop : showPopBadge
+  const showWindMetricBadge = isPrimaryColumn ? true : showWindBadge
 
   return (
     <div
@@ -215,80 +217,25 @@ export const WeatherConditionCard = forwardRef<
           )}
         </div>
 
-        {isPrimaryColumn ? (
-          <div
-            className="inline-grid grid-cols-[1.15em_auto] items-center gap-x-[3cqw] gap-y-2"
-            style={SECONDARY_VALUE_STYLE}
-          >
-            {showPop && (
-              <>
-                <div
-                  className="flex w-[1.15em] justify-center"
-                  style={SECONDARY_VALUE_STYLE}
-                >
-                  <Icon
-                    name="solid:raindrops"
-                    className="text-big"
-                    style={SECONDARY_ICON_STYLE}
-                    aria-hidden
-                  />
-                </div>
-                <div
-                  className="text-big justify-self-start leading-none"
-                  style={SECONDARY_VALUE_STYLE}
-                >
-                  {popText}
-                </div>
-              </>
-            )}
-            <div
-              className="flex w-[1.15em] justify-center"
-              style={SECONDARY_VALUE_STYLE}
+        <div className="flex flex-col items-center gap-2">
+          {showPopMetricBadge && (
+            <MetricBadge
+              icon="solid:cloud-showers"
+              tone="pop"
             >
-              {fanStyle ? (
-                <ShadowedRotatingIcon
-                  name="solid:fan"
-                  iconClassName="inline-block"
-                  style={SECONDARY_ICON_STYLE}
-                  motionStyle={fanStyle}
-                />
-              ) : (
-                <Icon
-                  name="solid:fan"
-                  className="text-big inline-block"
-                  style={SECONDARY_ICON_STYLE}
-                  aria-hidden
-                />
-              )}
-            </div>
-            <div
-              className="text-big flex items-center gap-1 justify-self-start leading-none"
-              style={SECONDARY_VALUE_STYLE}
+              {popText}
+            </MetricBadge>
+          )}
+          {showWindMetricBadge && (
+            <MetricBadge
+              icon="solid:fan"
+              iconStyle={fanStyle}
+              tone="wind"
             >
               {formatNumeric(windNum)}
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            {showPopBadge && (
-              <MetricBadge
-                icon="solid:raindrops"
-                tone="pop"
-              >
-                {popText}
-              </MetricBadge>
-            )}
-            {showWindBadge && (
-              <MetricBadge
-                icon="solid:fan"
-                iconStyle={fanStyle}
-                tone="wind"
-              >
-                {formatNumeric(windNum)}
-              </MetricBadge>
-            )}
-          </div>
-        )}
+            </MetricBadge>
+          )}
+        </div>
       </div>
     </div>
   )

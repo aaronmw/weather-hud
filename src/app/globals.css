@@ -107,9 +107,8 @@ body {
 
 @keyframes weather-cloud-drift {
   0% {
-    left: 0;
     opacity: 0;
-    transform: translateX(-100%);
+    transform: translate3d(-100%, 0, 0);
   }
 
   10% {
@@ -121,9 +120,8 @@ body {
   }
 
   100% {
-    left: 100%;
     opacity: 0;
-    transform: translateX(0);
+    transform: translate3d(100cqw, 0, 0);
   }
 }
 
@@ -156,6 +154,7 @@ body {
 
 @utility weather-cloud-drift {
   animation: weather-cloud-drift 150s linear infinite;
+  will-change: transform, opacity;
 }
 
 @utility weather-cloud-fade-in {
@@ -163,5 +162,6 @@ body {
 }
 
 @utility weather-rain-fall {
-  animation: weather-rain-fall 3.5s linear infinite;
+  animation: weather-rain-fall 1s linear infinite;
+  will-change: transform, opacity;
 }
