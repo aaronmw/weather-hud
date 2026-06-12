@@ -213,14 +213,12 @@ function getRandomLightningDelayMs(): number {
   )
 }
 
-function LightningSceneLayer({ animated }: { animated: boolean }) {
+function LightningSceneLayer() {
   const strikeRef = useRef<HTMLSpanElement>(null)
   const afterglowRef = useRef<HTMLSpanElement>(null)
   const flashRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
-    if (!animated) return
-
     let timeoutId: number | null = null
 
     function triggerStrike() {
@@ -248,9 +246,7 @@ function LightningSceneLayer({ animated }: { animated: boolean }) {
     return () => {
       if (timeoutId != null) window.clearTimeout(timeoutId)
     }
-  }, [animated])
-
-  if (!animated) return null
+  }, [])
 
   return (
     <div className="absolute inset-0 overflow-hidden [container-type:size]">
@@ -314,7 +310,7 @@ const SCENE_LAYERS = {
   },
   lightning: {
     id: 'lightning',
-    renderElement: (animated) => <LightningSceneLayer animated={animated} />,
+    renderElement: () => <LightningSceneLayer />,
   },
 } satisfies Record<string, SceneLayerDefinition>
 
