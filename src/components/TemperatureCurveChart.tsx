@@ -304,6 +304,10 @@ const SCENE_LAYERS = {
     id: 'clouds',
     renderElement: (animated) => <CloudSceneLayer animated={animated} />,
   },
+  skyStormy: {
+    id: 'sky-stormy',
+    renderElement: () => <TiledSceneLayer src="/sky-stormy.png" />,
+  },
   rain: {
     id: 'rain',
     renderElement: (animated) => <RainSceneLayer animated={animated} />,
@@ -375,6 +379,11 @@ const CONDITION_SCENES: ConditionSceneRule[] = [
     conditions: CLOUD_SCENE_CONDITION_CODES,
     dayOrNight: 'both',
     layers: [SCENE_LAYERS.clouds],
+  },
+  {
+    conditions: LIGHTNING_SCENE_CONDITION_CODES,
+    dayOrNight: 'both',
+    layers: [SCENE_LAYERS.skyStormy],
   },
   {
     conditions: [
