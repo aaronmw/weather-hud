@@ -4,6 +4,7 @@ import Image from 'next/image'
 import {
   type ReactElement,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -37,7 +38,10 @@ const TIME_LABEL_STYLE = { fontSize: 'min(5.76vh, 30.24cqw)' }
 const DAY_NIGHT_TILE_COUNT = 16
 const DAY_NIGHT_TILE_WIDTH_CQH = (588 / 1954) * 100
 const CLOUD_LAYER_WIDTH_CQH = (2782 / 1954) * 100
+const LIGHTNING_LAYER_WIDTH_CQH = (739 / 977) * 100
 const CLOUD_DRIFT_DURATION_SECONDS = 150
+const LIGHTNING_MIN_INTERVAL_MS = 3_000
+const LIGHTNING_MAX_INTERVAL_MS = 6_000
 const STARTUP_LAYOUT_POLL_DURATION_MS = 15_000
 const STARTUP_LAYOUT_POLL_INTERVAL_MS = 1_000
 
@@ -53,6 +57,20 @@ const CLOUD_DRIFT_SPRITES = [
     scaleClassName: 'origin-top-left scale-55',
     timelineOffsetPercent: 75,
   },
+]
+
+const LIGHTNING_SCENE_CONDITION_CODES = [
+  '09',
+  '19',
+  '39',
+  '40',
+  '41',
+  '42',
+  '43',
+  '44',
+  '45',
+  '46',
+  '47',
 ]
 
 interface ColumnSceneRun {
@@ -188,6 +206,91 @@ function RainSceneLayer({ animated }: { animated: boolean }) {
   )
 }
 
+function getRandomLightningDelayMs(): number {
+  return (
+    LIGHTNING_MIN_INTERVAL_MS +
+    Math.random() * (LIGHTNING_MAX_INTERVAL_MS - LIGHTNING_MIN_INTERVAL_MS)
+  )
+}
+
+function LightningSceneLayer({ animated }: { animated: boolean }) {
+  const strikeRef = useRef<HTMLSpanElement>(null)
+  const afterglowRef = useRef<HTMLSpanElement>(null)
+  const flashRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (!animated) return
+
+    let timeoutId: number | null = null
+
+    function triggerStrike() {
+      const strikeEl = strikeRef.current
+      const afterglowEl = afterglowRef.current
+      const flashEl = flashRef.current
+      if (strikeEl && afterglowEl && flashEl) {
+        strikeEl.style.left = `${Math.random() * 100}%`
+        afterglowEl.classList.remove('weather-lightning-afterglow')
+        flashEl.classList.remove('weather-lightning-flash')
+        void afterglowEl.offsetWidth
+        afterglowEl.classList.add('weather-lightning-afterglow')
+        flashEl.classList.add('weather-lightning-flash')
+      }
+      scheduleStrike()
+    }
+
+    function scheduleStrike() {
+      timeoutId = window.setTimeout(() => {
+        triggerStrike()
+      }, getRandomLightningDelayMs())
+    }
+
+    scheduleStrike()
+    return () => {
+      if (timeoutId != null) window.clearTimeout(timeoutId)
+    }
+  }, [animated])
+
+  if (!animated) return null
+
+  return (
+    <div className="absolute inset-0 overflow-hidden [container-type:size]">
+      <span
+        ref={strikeRef}
+        className="absolute top-0 bottom-0 -translate-x-1/2"
+        style={{
+          left: '50%',
+          width: `${LIGHTNING_LAYER_WIDTH_CQH}cqh`,
+        }}
+      >
+        <span
+          ref={afterglowRef}
+          className="absolute inset-0 opacity-0"
+        >
+          <Image
+            src="/lightning-afterglow.png"
+            alt=""
+            fill
+            sizes={`${LIGHTNING_LAYER_WIDTH_CQH}cqh`}
+            className="object-fill"
+          />
+        </span>
+        <span
+          ref={flashRef}
+          className="absolute inset-0 opacity-0"
+        >
+          <Image
+            src="/lightning-flash.png"
+            alt=""
+            fill
+            sizes={`${LIGHTNING_LAYER_WIDTH_CQH}cqh`}
+            className="object-fill"
+          />
+        </span>
+      </span>
+    </div>
+  )
+}
+
 const SCENE_LAYERS = {
   night: {
     id: 'night',
@@ -208,6 +311,10 @@ const SCENE_LAYERS = {
   rain: {
     id: 'rain',
     renderElement: (animated) => <RainSceneLayer animated={animated} />,
+  },
+  lightning: {
+    id: 'lightning',
+    renderElement: (animated) => <LightningSceneLayer animated={animated} />,
   },
 } satisfies Record<string, SceneLayerDefinition>
 
@@ -300,6 +407,11 @@ const CONDITION_SCENES: ConditionSceneRule[] = [
     dayOrNight: 'both',
     layers: [SCENE_LAYERS.rain],
   },
+  {
+    conditions: LIGHTNING_SCENE_CONDITION_CODES,
+    dayOrNight: 'both',
+    layers: [SCENE_LAYERS.lightning],
+  },
 ]
 
 const ORDERED_SCENE_LAYERS = CONDITION_SCENES.reduce<SceneLayerDefinition[]>(
@@ -329,6 +441,8 @@ interface LabelDatum {
   showTemp: boolean
   showPopBadge: boolean
   showWindBadge: boolean
+  isPopBadgeCondensed: boolean
+  isWindBadgeCondensed: boolean
 }
 
 interface TemperatureCurveChartProps {
@@ -534,6 +648,8 @@ export function TemperatureCurveChart({
         showTemp: true,
         showPopBadge: false,
         showWindBadge: false,
+        isPopBadgeCondensed: false,
+        isWindBadgeCondensed: false,
       },
       ...hourlyForecast.slice(0, NUM_FORECASTED_HOURS).map((h, i) => {
         const windFmt = formatWind(
@@ -557,6 +673,8 @@ export function TemperatureCurveChart({
           showTemp: false,
           showPopBadge: false,
           showWindBadge: false,
+          isPopBadgeCondensed: false,
+          isWindBadgeCondensed: false,
         }
       }),
     ].slice(0, numHours) as LabelDatum[]
@@ -565,12 +683,14 @@ export function TemperatureCurveChart({
       const previous = labels[index - 1]
       if (!previous) return label
       const isPopRepeated = (label.popNum ?? 0) === (previous.popNum ?? 0)
+      const isWindRepeated = label.windNum === previous.windNum
       return {
         ...label,
         showTemp: true,
-        showPopBadge:
-          !isPopRepeated && (label.popNum ?? 0) >= POP_DISPLAY_THRESHOLD_PCT,
+        showPopBadge: (label.popNum ?? 0) >= POP_DISPLAY_THRESHOLD_PCT,
         showWindBadge: label.windNum > HIGH_WIND_THRESHOLD_KMH,
+        isPopBadgeCondensed: isPopRepeated,
+        isWindBadgeCondensed: isWindRepeated,
       }
     })
   }, [
@@ -708,6 +828,8 @@ export function TemperatureCurveChart({
         showTemp={label.showTemp}
         showPopBadge={label.showPopBadge}
         showWindBadge={label.showWindBadge}
+        isPopBadgeCondensed={label.isPopBadgeCondensed}
+        isWindBadgeCondensed={label.isWindBadgeCondensed}
         animated={animated}
       />
     )

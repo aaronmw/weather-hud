@@ -142,6 +142,38 @@ body {
   }
 }
 
+@keyframes weather-lightning-flash {
+  0% {
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes weather-lightning-afterglow {
+  0% {
+    opacity: 0;
+  }
+
+  4% {
+    opacity: 1;
+  }
+
+  18% {
+    opacity: 0.85;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
 @keyframes weather-cloud-fade-in {
   from {
     opacity: 0;
@@ -164,4 +196,14 @@ body {
 @utility weather-rain-fall {
   animation: weather-rain-fall 1s linear infinite;
   will-change: transform, opacity;
+}
+
+@utility weather-lightning-flash {
+  animation: weather-lightning-flash 450ms linear both;
+  will-change: opacity;
+}
+
+@utility weather-lightning-afterglow {
+  animation: weather-lightning-afterglow 1800ms linear both;
+  will-change: opacity;
 }

@@ -39,6 +39,7 @@ function getFanRotationDurationSeconds(windKmh: number): number | null {
 interface MetricBadgeProps {
   icon: IconString
   iconStyle?: CSSProperties
+  isCondensed?: boolean
   tone: 'pop' | 'wind'
   children: ReactNode
 }
@@ -94,37 +95,43 @@ function ShadowedRotatingIcon({
   )
 }
 
-function MetricBadge({ icon, iconStyle, tone, children }: MetricBadgeProps) {
+function MetricBadge({
+  icon,
+  iconStyle,
+  isCondensed = false,
+  tone,
+  children,
+}: MetricBadgeProps) {
   return (
     <div
       className={twJoin(
-        'inline-grid grid-cols-[auto_auto] items-stretch overflow-hidden rounded-full',
-        'p-0 leading-none text-white',
+        'inline-grid w-max max-w-none shrink-0 grid-cols-[auto_max-content] items-stretch overflow-hidden rounded-full',
+        'origin-center p-0 leading-none text-white',
+        isCondensed && 'scale-50',
         tone === 'pop' ? 'bg-[#073a67]' : 'bg-[#760000]',
       )}
       style={SECONDARY_VALUE_STYLE}
     >
       <span
-        className="text-shadow-big inline-flex h-[1.5em] w-[1.5em] shrink-0 items-center justify-center leading-none"
+        className="text-shadow-big inline-flex aspect-square shrink-0 items-center justify-center p-[0.28em] leading-none"
+        style={SECONDARY_ICON_STYLE}
         aria-hidden
       >
         {iconStyle ? (
           <ShadowedRotatingIcon
             name={icon}
-            iconClassName="inline-flex h-full w-full items-center justify-center leading-none [&_[data-icon]]:leading-none"
-            style={SECONDARY_ICON_STYLE}
+            iconClassName="inline-flex items-center justify-center leading-none [&_[data-icon]]:leading-none"
             motionStyle={iconStyle}
           />
         ) : (
           <Icon
             name={icon}
-            className="inline-flex h-full w-full items-center justify-center leading-none [&_[data-icon]]:leading-none"
-            style={SECONDARY_ICON_STYLE}
+            className="inline-flex items-center justify-center leading-none [&_[data-icon]]:leading-none"
           />
         )}
       </span>
       <span
-        className="text-big inline-flex min-w-0 items-center justify-self-start pr-[0.42em] leading-none"
+        className="text-big inline-flex min-w-max items-center justify-self-start whitespace-nowrap pr-[0.42em] leading-none"
         style={SECONDARY_VALUE_STYLE}
       >
         {children}
@@ -146,6 +153,8 @@ export interface WeatherConditionCardData {
   showTemp?: boolean
   showPopBadge?: boolean
   showWindBadge?: boolean
+  isPopBadgeCondensed?: boolean
+  isWindBadgeCondensed?: boolean
 }
 
 export const WeatherConditionCard = forwardRef<
@@ -164,6 +173,8 @@ export const WeatherConditionCard = forwardRef<
     showTemp = true,
     showPopBadge = false,
     showWindBadge = false,
+    isPopBadgeCondensed = false,
+    isWindBadgeCondensed = false,
   },
   ref,
 ) {
@@ -219,10 +230,11 @@ export const WeatherConditionCard = forwardRef<
           )}
         </div>
 
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex max-w-none flex-col items-center gap-2 overflow-visible">
           {showPopMetricBadge && (
             <MetricBadge
               icon="solid:cloud-showers"
+              isCondensed={isPopBadgeCondensed}
               tone="pop"
             >
               {popText}
@@ -230,8 +242,9 @@ export const WeatherConditionCard = forwardRef<
           )}
           {showWindMetricBadge && (
             <MetricBadge
-              icon="solid:fan"
+              icon="solid:pump-impeller"
               iconStyle={fanStyle}
+              isCondensed={isWindBadgeCondensed}
               tone="wind"
             >
               {formatNumeric(windNum)}

@@ -58,6 +58,7 @@ export type WeatherIconName =
   | 'fan'
   | 'moon-cloud'
   | 'plus'
+  | 'pump-impeller'
   | 'smog'
   | 'smoke'
   | 'snow-blowing'

@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "doctor": "npx react-doctor@latest --verbose --diff --no-score --blocking none",
     "netlify:build": "npx --yes netlify-cli@26.1.0 build",
     "deploy:preview": "npx --yes netlify-cli@26.1.0 deploy",
     "deploy:prod": "npx --yes netlify-cli@26.1.0 deploy --prod",
