@@ -6,7 +6,11 @@
     "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "netlify:build": "npx --yes netlify-cli@26.1.0 build",
+    "deploy:preview": "npx --yes netlify-cli@26.1.0 deploy",
+    "deploy:prod": "npx --yes netlify-cli@26.1.0 deploy --prod",
+    "deploy:prod:no-build": "npx --yes netlify-cli@26.1.0 deploy --prod --no-build"
   },
   "dependencies": {
     "@fontsource/cascadia-mono": "^5.2.3",
