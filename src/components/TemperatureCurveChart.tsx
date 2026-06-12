@@ -814,39 +814,30 @@ export function TemperatureCurveChart({
             ))}
           </div>
           {layout && (
-            <svg
-              className="absolute inset-0 h-full w-full overflow-visible"
-              width={layout.chartWidth}
-              height={layout.chartHeight}
-              style={{ display: 'block' }}
-            >
-              <g
-                transform={`translate(0, ${layout.chartHeight - layout.contentBottom})`}
-              >
-                {labelData.map((label, i) => {
-                  const offsetY =
-                    i === 0
-                      ? 0
-                      : -firstHeight * layout.kMax * (label.temp - firstTemp)
-                  const col = columns[i]
-                  const dim = layout.cardDims[i]
-                  return (
-                    <foreignObject
-                      key={label.key}
-                      x={col.x}
-                      y={offsetY}
-                      width={col.width}
-                      height={dim.height}
-                      style={{ overflow: 'visible' }}
-                    >
-                      <div className="origin-top-left">
-                        {renderCard(label, false, i)}
-                      </div>
-                    </foreignObject>
-                  )
-                })}
-              </g>
-            </svg>
+            <div className="absolute inset-0 overflow-visible">
+              {labelData.map((label, i) => {
+                const offsetY =
+                  i === 0
+                    ? 0
+                    : -firstHeight * layout.kMax * (label.temp - firstTemp)
+                const col = columns[i]
+                const dim = layout.cardDims[i]
+                return (
+                  <div
+                    key={label.key}
+                    className="absolute overflow-visible"
+                    style={{
+                      height: dim.height,
+                      left: col.x,
+                      top: layout.chartHeight - layout.contentBottom + offsetY,
+                      width: col.width,
+                    }}
+                  >
+                    {renderCard(label, false, i)}
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
       </div>
