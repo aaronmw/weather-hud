@@ -40,6 +40,7 @@ interface MetricBadgeProps {
   icon: IconString
   iconStyle?: CSSProperties
   isCondensed?: boolean
+  originClassName?: string
   tone: 'pop' | 'wind'
   children: ReactNode
 }
@@ -99,6 +100,7 @@ function MetricBadge({
   icon,
   iconStyle,
   isCondensed = false,
+  originClassName = 'origin-center',
   tone,
   children,
 }: MetricBadgeProps) {
@@ -106,7 +108,8 @@ function MetricBadge({
     <div
       className={twJoin(
         'inline-grid w-max max-w-none shrink-0 grid-cols-[auto_max-content] items-stretch overflow-hidden rounded-full',
-        'origin-center p-0 leading-none text-white',
+        originClassName,
+        'p-0 leading-none text-white',
         isCondensed && 'scale-50',
         tone === 'pop' ? 'bg-[#073a67]' : 'bg-[#760000]',
       )}
@@ -191,6 +194,7 @@ export const WeatherConditionCard = forwardRef<
   const showMainTemp = isPrimaryColumn || showTemp
   const showPopMetricBadge = isPrimaryColumn ? showPop : showPopBadge
   const showWindMetricBadge = isPrimaryColumn ? true : showWindBadge
+  const showBadgePair = showPopMetricBadge && showWindMetricBadge
 
   return (
     <div
@@ -235,6 +239,7 @@ export const WeatherConditionCard = forwardRef<
             <MetricBadge
               icon="solid:cloud-showers"
               isCondensed={isPopBadgeCondensed}
+              originClassName={showBadgePair ? 'origin-bottom' : undefined}
               tone="pop"
             >
               {popText}
@@ -245,6 +250,7 @@ export const WeatherConditionCard = forwardRef<
               icon="solid:pump-impeller"
               iconStyle={fanStyle}
               isCondensed={isWindBadgeCondensed}
+              originClassName={showBadgePair ? 'origin-top' : undefined}
               tone="wind"
             >
               {formatNumeric(windNum)}
