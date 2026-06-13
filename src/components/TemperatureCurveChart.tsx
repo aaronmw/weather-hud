@@ -100,7 +100,7 @@ interface ConditionSceneRule {
 
 function TiledSceneLayer({ src }: { src: string }) {
   return (
-    <div className="absolute inset-0 overflow-hidden [container-type:size]">
+    <div className="[container-type:size] absolute inset-0 overflow-hidden">
       {Array.from({ length: DAY_NIGHT_TILE_COUNT }, (_, index) => (
         <span
           key={index}
@@ -160,7 +160,7 @@ function CloudDriftSprite({
 
 function CloudSceneLayer({ animated }: { animated: boolean }) {
   return (
-    <div className="weather-cloud-fade-in absolute inset-0 overflow-hidden [container-type:size]">
+    <div className="weather-cloud-fade-in [container-type:size] absolute inset-0 overflow-hidden">
       {[0, 50].flatMap((phaseOffset) =>
         CLOUD_DRIFT_SPRITES.map((sprite) => (
           <CloudDriftSprite
@@ -202,6 +202,20 @@ function RainSceneLayer({ animated }: { animated: boolean }) {
           style={{ animationDelay: '-0.5s' }}
         />
       )}
+    </div>
+  )
+}
+
+function LensFlareSceneLayer() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <Image
+        src="/lens-flare.png"
+        alt=""
+        fill
+        sizes="100vw"
+        className="object-cover opacity-70 mix-blend-screen"
+      />
     </div>
   )
 }
@@ -249,7 +263,7 @@ function LightningSceneLayer() {
   }, [])
 
   return (
-    <div className="absolute inset-0 overflow-hidden [container-type:size]">
+    <div className="[container-type:size] absolute inset-0 overflow-hidden">
       <span
         ref={strikeRef}
         className="absolute top-0 bottom-0 -translate-x-1/2"
@@ -296,6 +310,10 @@ const SCENE_LAYERS = {
     id: 'day',
     renderElement: () => <TiledSceneLayer src="/day.png" />,
   },
+  lensFlare: {
+    id: 'lens-flare',
+    renderElement: () => <LensFlareSceneLayer />,
+  },
   dayCloudy: {
     id: 'day-cloudy',
     renderElement: () => <TiledSceneLayer src="/day-cloudy.png" />,
@@ -317,6 +335,8 @@ const SCENE_LAYERS = {
     renderElement: () => <LightningSceneLayer />,
   },
 } satisfies Record<string, SceneLayerDefinition>
+
+const CLEAR_SCENE_CONDITION_CODES = ['00', '31']
 
 const CLOUD_SCENE_CONDITION_CODES = [
   '01',
@@ -369,6 +389,11 @@ const CONDITION_SCENES: ConditionSceneRule[] = [
     conditions: { exclude: CLOUD_SCENE_CONDITION_CODES },
     dayOrNight: 'day',
     layers: [SCENE_LAYERS.day],
+  },
+  {
+    conditions: CLEAR_SCENE_CONDITION_CODES,
+    dayOrNight: 'day',
+    layers: [SCENE_LAYERS.lensFlare],
   },
   {
     conditions: CLOUD_SCENE_CONDITION_CODES,
