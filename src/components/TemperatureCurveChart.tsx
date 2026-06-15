@@ -33,7 +33,6 @@ import { twJoin } from 'tailwind-merge'
 const K_MAX_ITERATIONS = 20
 const K_EPS = 1e-3
 const HIGH_WIND_THRESHOLD_KMH = 20
-const POP_DISPLAY_THRESHOLD_PCT = 20
 const TIME_LABEL_STYLE = { fontSize: 'min(5.76vh, 30.24cqw)' }
 const DAY_NIGHT_TILE_COUNT = 16
 const DAY_NIGHT_TILE_WIDTH_CQH = (588 / 1954) * 100
@@ -337,6 +336,7 @@ const SCENE_LAYERS = {
 } satisfies Record<string, SceneLayerDefinition>
 
 const CLEAR_SCENE_CONDITION_CODES = ['00', '31']
+const SUN_AND_CLOUD_SCENE_CONDITION_CODES = ['01', '02', '03', '04', '05']
 
 const CLOUD_SCENE_CONDITION_CODES = [
   '01',
@@ -378,6 +378,9 @@ const CLOUD_SCENE_CONDITION_CODES = [
   '43',
   '47',
 ]
+const DAY_CLOUDY_SCENE_CONDITION_CODES = CLOUD_SCENE_CONDITION_CODES.filter(
+  (iconCode) => !SUN_AND_CLOUD_SCENE_CONDITION_CODES.includes(iconCode),
+)
 
 const CONDITION_SCENES: ConditionSceneRule[] = [
   {
@@ -386,7 +389,7 @@ const CONDITION_SCENES: ConditionSceneRule[] = [
     layers: [SCENE_LAYERS.night],
   },
   {
-    conditions: { exclude: CLOUD_SCENE_CONDITION_CODES },
+    conditions: { exclude: DAY_CLOUDY_SCENE_CONDITION_CODES },
     dayOrNight: 'day',
     layers: [SCENE_LAYERS.day],
   },
@@ -396,7 +399,7 @@ const CONDITION_SCENES: ConditionSceneRule[] = [
     layers: [SCENE_LAYERS.lensFlare],
   },
   {
-    conditions: CLOUD_SCENE_CONDITION_CODES,
+    conditions: DAY_CLOUDY_SCENE_CONDITION_CODES,
     dayOrNight: 'day',
     layers: [SCENE_LAYERS.dayCloudy],
   },
@@ -676,7 +679,7 @@ export function TemperatureCurveChart({
         isPrimaryColumn: true,
         isDaylight: isDaylightAt(currentDate),
         showTemp: true,
-        showPopBadge: false,
+        showPopBadge: (nowPop ?? 0) > 0,
         showWindBadge: false,
         isPopBadgeCondensed: false,
         isWindBadgeCondensed: false,
@@ -701,7 +704,7 @@ export function TemperatureCurveChart({
             typeof h.utc === 'string' ? new Date(h.utc) : h.utc,
           ),
           showTemp: false,
-          showPopBadge: false,
+          showPopBadge: true,
           showWindBadge: false,
           isPopBadgeCondensed: false,
           isWindBadgeCondensed: false,
@@ -717,9 +720,9 @@ export function TemperatureCurveChart({
       return {
         ...label,
         showTemp: true,
-        showPopBadge: (label.popNum ?? 0) >= POP_DISPLAY_THRESHOLD_PCT,
+        showPopBadge: (label.popNum ?? 0) > 0,
         showWindBadge: label.windNum > HIGH_WIND_THRESHOLD_KMH,
-        isPopBadgeCondensed: isPopRepeated,
+        isPopBadgeCondensed: (label.popNum ?? 0) > 0 && isPopRepeated,
         isWindBadgeCondensed: isWindRepeated,
       }
     })

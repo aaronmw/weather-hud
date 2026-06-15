@@ -24,7 +24,6 @@ const SECONDARY_ICON_STYLE: CSSProperties = {
 const SECONDARY_VALUE_STYLE: CSSProperties = {
   fontSize: 'min(5.76vh, 30.24cqw)',
 }
-const POP_DISPLAY_THRESHOLD_PCT = 20
 
 function getFanRotationDurationSeconds(windKmh: number): number | null {
   if (windKmh <= 0) return null
@@ -134,7 +133,7 @@ function MetricBadge({
         )}
       </span>
       <span
-        className="text-big inline-flex min-w-max items-center justify-self-start whitespace-nowrap pr-[0.42em] leading-none"
+        className="text-big inline-flex min-w-max items-center justify-self-start pr-[0.42em] leading-none whitespace-nowrap"
         style={SECONDARY_VALUE_STYLE}
       >
         {children}
@@ -183,7 +182,6 @@ export const WeatherConditionCard = forwardRef<
 ) {
   const popVal = popNum ?? 0
   const popText = pop ?? `${formatNumeric(popVal)}%`
-  const showPop = popVal >= POP_DISPLAY_THRESHOLD_PCT
   const fanRotationDuration = getFanRotationDurationSeconds(windNum)
   const fanStyle =
     animated && fanRotationDuration != null
@@ -192,7 +190,7 @@ export const WeatherConditionCard = forwardRef<
         }
       : undefined
   const showMainTemp = isPrimaryColumn || showTemp
-  const showPopMetricBadge = isPrimaryColumn ? showPop : showPopBadge
+  const showPopMetricBadge = showPopBadge
   const showWindMetricBadge = isPrimaryColumn ? true : showWindBadge
   const showBadgePair = showPopMetricBadge && showWindMetricBadge
 
