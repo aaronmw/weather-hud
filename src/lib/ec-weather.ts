@@ -8,6 +8,7 @@ export interface WeatherData {
   location: string
   condition: string
   iconCode: string
+  currentUsAqi: number | null
   currentTemp: number
   todayHigh: number
   todayLow: number
@@ -33,12 +34,14 @@ export interface DayForecast {
 
 export interface HourlyForecast {
   utc: Date
+  condition: string
   temp: number
   windSpeed: number
   windGust: number
   windDirection: number | null
   pop: number | null
   iconCode: string
+  usAqi: number | null
 }
 
 function num(s: string | undefined): number | null {
@@ -60,6 +63,11 @@ function extractText(obj: unknown): string {
     return text != null ? String(text) : ''
   }
   return ''
+}
+
+function usableCondition(condition: string): string {
+  const value = condition.trim()
+  return /^(not observed|not available|n\/?a|—|-)$/i.test(value) ? '' : value
 }
 
 const WEEKDAYS = [
@@ -172,7 +180,10 @@ export async function fetchWeather(
   const current = siteData?.currentConditions as
     | Record<string, unknown>
     | undefined
-  const currentCondition = extractText(current?.condition)
+  const currentCondition = usableCondition(extractText(current?.condition))
+  const currentIcon = extractText(current?.iconCode)
+  const currentIconCode =
+    currentCondition && currentIcon ? String(currentIcon).padStart(2, '0') : ''
   const forecastGroup = siteData?.forecastGroup as
     | Record<string, unknown>
     | undefined
@@ -200,8 +211,8 @@ export async function fetchWeather(
   let todayHigh = 0
   let todayLow = 0
   let uvIndexTodayHigh: number | null = null
-  let condition = ''
-  let iconCode = ''
+  let forecastCondition = ''
+  let forecastIconCode = ''
 
   const dayForecasts: DayForecast[] = []
   for (let i = 0; i < forecastList.length; i++) {
@@ -239,12 +250,12 @@ export async function fetchWeather(
     if (textForecastName === 'Today') {
       todayHigh = high ?? currentTemp
       uvIndexTodayHigh = uvIndex
-      iconCode = icon ? String(icon).padStart(2, '0') : '02'
-      condition =
+      forecastIconCode = icon ? String(icon).padStart(2, '0') : '02'
+      forecastCondition =
         textSummary ||
         cloudPrecipSummary ||
         currentCondition ||
-        ICON_CODE_DESCRIPTIONS[iconCode] ||
+        ICON_CODE_DESCRIPTIONS[forecastIconCode] ||
         ICON_CODE_DESCRIPTIONS['02']
     }
     if (textForecastName === 'Tonight') {
@@ -288,13 +299,13 @@ export async function fetchWeather(
     }
   }
 
-  if (!condition && dayForecasts.length > 0) {
+  if (!forecastCondition && dayForecasts.length > 0) {
     const first = dayForecasts[0]
-    iconCode = first.iconCode
-    condition =
+    forecastIconCode = first.iconCode
+    forecastCondition =
       first.condition ||
       currentCondition ||
-      ICON_CODE_DESCRIPTIONS[iconCode] ||
+      ICON_CODE_DESCRIPTIONS[forecastIconCode] ||
       ICON_CODE_DESCRIPTIONS['02']
     if (todayHigh === 0) todayHigh = first.high ?? currentTemp
   }
@@ -353,16 +364,19 @@ export async function fetchWeather(
     const dir =
       bearing != null && bearing >= 0 && bearing <= 360 ? bearing : null
     const pop = num(extractText(ho?.lop))
+    const condition = usableCondition(extractText(ho?.condition))
     const icon = extractText(ho?.iconCode)
     const iconCode = icon ? String(icon).padStart(2, '0') : '00'
     parsedHourlies.push({
       utc: utcDate,
+      condition,
       temp,
       windSpeed: speed,
       windGust: gust,
       windDirection: dir,
       pop,
       iconCode,
+      usAqi: null,
     })
   }
 
@@ -382,12 +396,14 @@ export async function fetchWeather(
           : best,
       {
         utc: new Date(0),
+        condition: '',
         temp: -999,
         windSpeed: 0,
         windGust: 0,
         windDirection: null,
         pop: null,
         iconCode: '00',
+        usAqi: null,
       } as HourlyForecast,
     )
     if (maxEntry.temp === todayHigh) {
@@ -395,12 +411,30 @@ export async function fetchWeather(
     }
   }
 
+  const nearestHourly = hourlyForecast[0]
+  const nearestHourlyWithCondition = parsedHourlies.find(
+    (hour) => hour.condition,
+  )
+  const resolvedIconCode =
+    currentIconCode ||
+    nearestHourlyWithCondition?.iconCode ||
+    nearestHourly?.iconCode ||
+    forecastIconCode ||
+    '00'
+  const resolvedCondition =
+    currentCondition ||
+    nearestHourlyWithCondition?.condition ||
+    forecastCondition ||
+    ICON_CODE_DESCRIPTIONS[resolvedIconCode] ||
+    '—'
+
   return {
     location: locationProvince
       ? `${locationName}, ${locationProvince}`
       : locationName || province,
-    condition: condition || ICON_CODE_DESCRIPTIONS[iconCode] || '—',
-    iconCode: iconCode || '00',
+    condition: resolvedCondition,
+    iconCode: resolvedIconCode,
+    currentUsAqi: null,
     currentTemp,
     todayHigh,
     todayLow,

@@ -20,6 +20,8 @@ const WIND_MIN_KMH = 0
 const WIND_MAX_KMH = 100
 const POP_MIN_PCT = 0
 const POP_MAX_PCT = 100
+const AQI_PREVIEW_BASE = 50
+const AQI_MAX = 500
 const DEV_CONDITION_CODES = ['00', '01', '02', '03', '10', '12', '16', '39']
 const DEV_CONDITION_WEIGHTS = [10, 16, 24, 16, 12, 14, 5, 3]
 const DEFAULT_TEXT_SHADOW = '0px 5px 20px rgba(0,0,0,0.5)'
@@ -123,6 +125,11 @@ function conditionCanHavePop(iconCode: string): boolean {
   return DEV_POP_CONDITION_CODES.has(iconCode)
 }
 
+function applyAqiOffset(value: number | null, offset: number): number | null {
+  if (value == null && offset === 0) return null
+  return clamp(Math.round((value ?? AQI_PREVIEW_BASE) + offset), 0, AQI_MAX)
+}
+
 function formatConsoleHour(utc: Date | string): string {
   const date = typeof utc === 'string' ? new Date(utc) : utc
   return date.toLocaleTimeString('en-CA', {
@@ -134,12 +141,13 @@ function formatConsoleHour(utc: Date | string): string {
 }
 
 function logFetchedWeatherData(d: WeatherData): void {
-  const nowPop = d.sevenDayForecast[0]?.pop ?? d.hourlyForecast[0]?.pop ?? null
+  const nowPop = d.hourlyForecast[0]?.pop ?? d.sevenDayForecast[0]?.pop ?? null
   const rows = [
     {
       hour: 'Now',
       condition: d.condition || describeIconCode(d.iconCode),
       iconCode: d.iconCode,
+      usAqi: d.currentUsAqi,
       tempC: d.currentTemp,
       popPct: nowPop,
       windKmh: Math.max(d.windSpeed, d.windGust),
@@ -148,8 +156,9 @@ function logFetchedWeatherData(d: WeatherData): void {
     },
     ...d.hourlyForecast.slice(0, NUM_FORECASTED_HOURS).map((hour) => ({
       hour: formatConsoleHour(hour.utc),
-      condition: describeIconCode(hour.iconCode),
+      condition: hour.condition || describeIconCode(hour.iconCode),
       iconCode: hour.iconCode,
+      usAqi: hour.usAqi,
       tempC: hour.temp,
       popPct: hour.pop,
       windKmh: Math.max(hour.windSpeed, hour.windGust),
@@ -181,7 +190,9 @@ function splitCssShadowLayers(value: string): string[] {
   return layers.filter(Boolean)
 }
 
-function getFanShadowParts(textShadow: string): typeof DEFAULT_FAN_SHADOW_PARTS {
+function getFanShadowParts(
+  textShadow: string,
+): typeof DEFAULT_FAN_SHADOW_PARTS {
   const probe = document.createElement('span')
   probe.style.position = 'absolute'
   probe.style.visibility = 'hidden'
@@ -276,6 +287,9 @@ export default function Home() {
   const [popOffsets, setPopOffsets] = useState<number[]>(() =>
     Array(DEV_FORECAST_HOURS).fill(0),
   )
+  const [aqiOffsets, setAqiOffsets] = useState<number[]>(() =>
+    Array(DEV_FORECAST_HOURS).fill(0),
+  )
   const [conditionCodeOverrides, setConditionCodeOverrides] = useState<
     (string | null)[]
   >(() => Array(DEV_FORECAST_HOURS).fill(null))
@@ -349,7 +363,7 @@ export default function Home() {
     }
 
     const nowBasePop =
-      data.sevenDayForecast[0]?.pop ?? data.hourlyForecast[0]?.pop ?? 0
+      data.hourlyForecast[0]?.pop ?? data.sevenDayForecast[0]?.pop ?? 0
     const nextTemperatureOffsets = targetTemps.map((target, index) => {
       const base =
         index === 0
@@ -407,6 +421,14 @@ export default function Home() {
         popOffset={popOffsets[selectedHour] ?? 0}
         onPopOffsetChange={(delta) => {
           setPopOffsets((prev) => {
+            const next = [...prev]
+            next[selectedHour] = (next[selectedHour] ?? 0) + delta
+            return next
+          })
+        }}
+        aqiOffset={aqiOffsets[selectedHour] ?? 0}
+        onAqiOffsetChange={(delta) => {
+          setAqiOffsets((prev) => {
             const next = [...prev]
             next[selectedHour] = (next[selectedHour] ?? 0) + delta
             return next
@@ -481,38 +503,55 @@ export default function Home() {
             <TemperatureCurveChart
               animated={weatherAnimationsEnabled}
               currentTemp={data.currentTemp + (temperatureOffsets[0] ?? 0)}
-              hourlyForecast={data.hourlyForecast.map((h, i) => ({
-                ...h,
-                iconCode: conditionCodeOverrides[i + 1] ?? h.iconCode,
-                temp: h.temp + (temperatureOffsets[i + 1] ?? 0),
-                windSpeed: Math.max(
-                  0,
-                  h.windSpeed + (windSpeedOffsets[i + 1] ?? 0),
-                ),
-                windGust: Math.max(
-                  0,
-                  h.windGust + (windSpeedOffsets[i + 1] ?? 0),
-                ),
-                pop: Math.min(
-                  100,
-                  Math.max(0, (h.pop ?? 0) + (popOffsets[i + 1] ?? 0)),
-                ),
-              }))}
+              hourlyForecast={data.hourlyForecast.map((h, i) => {
+                const conditionCodeOverride = conditionCodeOverrides[i + 1]
+                return {
+                  ...h,
+                  condition:
+                    conditionCodeOverride != null
+                      ? describeIconCode(conditionCodeOverride)
+                      : h.condition,
+                  iconCode: conditionCodeOverride ?? h.iconCode,
+                  temp: h.temp + (temperatureOffsets[i + 1] ?? 0),
+                  windSpeed: Math.max(
+                    0,
+                    h.windSpeed + (windSpeedOffsets[i + 1] ?? 0),
+                  ),
+                  windGust: Math.max(
+                    0,
+                    h.windGust + (windSpeedOffsets[i + 1] ?? 0),
+                  ),
+                  pop: Math.min(
+                    100,
+                    Math.max(0, (h.pop ?? 0) + (popOffsets[i + 1] ?? 0)),
+                  ),
+                  usAqi: applyAqiOffset(h.usAqi, aqiOffsets[i + 1] ?? 0),
+                }
+              })}
               windSpeed={Math.max(
                 0,
                 data.windSpeed + (windSpeedOffsets[0] ?? 0),
               )}
               windGust={Math.max(0, data.windGust + (windSpeedOffsets[0] ?? 0))}
               windDirection={data.windDirection}
-              todayPop={(() => {
+              currentPop={(() => {
                 const base =
-                  data.sevenDayForecast[0]?.pop ??
                   data.hourlyForecast[0]?.pop ??
+                  data.sevenDayForecast[0]?.pop ??
                   null
                 return base != null
                   ? Math.min(100, Math.max(0, base + (popOffsets[0] ?? 0)))
                   : Math.min(100, Math.max(0, popOffsets[0] ?? 0))
               })()}
+              currentCondition={
+                conditionCodeOverrides[0] != null
+                  ? describeIconCode(conditionCodeOverrides[0])
+                  : data.condition
+              }
+              currentUsAqi={applyAqiOffset(
+                data.currentUsAqi,
+                aqiOffsets[0] ?? 0,
+              )}
               iconCode={conditionCodeOverrides[0] ?? data.iconCode}
               currentDateMs={now}
             />
@@ -527,6 +566,13 @@ export default function Home() {
           {data?.location && <span>{data.location}</span>}
           {data?.location && lastSyncedText && <span>&bull;</span>}
           {lastSyncedText && <span>{lastSyncedText}</span>}
+          {(data.currentUsAqi != null ||
+            data.hourlyForecast.some((hour) => hour.usAqi != null)) && (
+            <>
+              <span>&bull;</span>
+              <span>Air quality: Open-Meteo / CAMS</span>
+            </>
+          )}
         </div>
       )}
       {devPanel}

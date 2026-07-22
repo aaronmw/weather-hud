@@ -25,6 +25,22 @@ const SECONDARY_VALUE_STYLE: CSSProperties = {
   fontSize: 'min(5.76vh, 30.24cqw)',
 }
 
+function getAqiCategory(usAqi: number): string {
+  if (usAqi <= 100) return 'moderate'
+  if (usAqi <= 150) return 'unhealthy for sensitive groups'
+  if (usAqi <= 200) return 'unhealthy'
+  if (usAqi <= 300) return 'very unhealthy'
+  return 'hazardous'
+}
+
+function getAqiBackgroundClass(usAqi: number): string {
+  if (usAqi <= 100) return 'bg-[#795500]'
+  if (usAqi <= 150) return 'bg-[#8a3f00]'
+  if (usAqi <= 200) return 'bg-[#760000]'
+  if (usAqi <= 300) return 'bg-[#4d225c]'
+  return 'bg-[#4b1928]'
+}
+
 function getFanRotationDurationSeconds(windKmh: number): number | null {
   if (windKmh <= 0) return null
   const windMetersPerSecond = windKmh / 3.6
@@ -40,7 +56,9 @@ interface MetricBadgeProps {
   iconStyle?: CSSProperties
   isCondensed?: boolean
   originClassName?: string
-  tone: 'pop' | 'wind'
+  tone: 'pop' | 'wind' | 'aqi'
+  usAqi?: number
+  ariaLabel?: string
   children: ReactNode
 }
 
@@ -101,8 +119,17 @@ function MetricBadge({
   isCondensed = false,
   originClassName = 'origin-center',
   tone,
+  usAqi = 0,
+  ariaLabel,
   children,
 }: MetricBadgeProps) {
+  const backgroundClassName =
+    tone === 'pop'
+      ? 'bg-[#073a67]'
+      : tone === 'wind'
+        ? 'bg-[#760000]'
+        : getAqiBackgroundClass(usAqi)
+
   return (
     <div
       className={twJoin(
@@ -110,9 +137,11 @@ function MetricBadge({
         originClassName,
         'p-0 leading-none text-white',
         isCondensed && 'scale-50',
-        tone === 'pop' ? 'bg-[#073a67]' : 'bg-[#760000]',
+        backgroundClassName,
       )}
       style={SECONDARY_VALUE_STYLE}
+      role={ariaLabel ? 'img' : undefined}
+      aria-label={ariaLabel}
     >
       <span
         className="text-shadow-big inline-flex aspect-square shrink-0 items-center justify-center p-[0.28em] leading-none"
@@ -145,11 +174,13 @@ function MetricBadge({
 export interface WeatherConditionCardData {
   animated?: boolean
   temp: number
+  condition: string
   iconCode: string
   pop: string | null
   popNum: number | null
   windNum: number
   windDirection: number | null
+  usAqi: number | null
   isDaylight?: boolean
   isPrimaryColumn?: boolean
   showTemp?: boolean
@@ -166,10 +197,12 @@ export const WeatherConditionCard = forwardRef<
   {
     animated = true,
     temp,
+    condition,
     iconCode,
     pop,
     popNum,
     windNum,
+    usAqi,
     isDaylight = true,
     isPrimaryColumn = false,
     showTemp = true,
@@ -215,7 +248,7 @@ export const WeatherConditionCard = forwardRef<
           )}
         >
           <Icon
-            name={getConditionIcon(iconCode, 'solid', isDaylight)}
+            name={getConditionIcon(iconCode, 'solid', isDaylight, condition)}
             className="text-huge"
             style={
               showMainTemp ? CONDITION_ICON_STYLE : CONDITION_ONLY_ICON_STYLE
@@ -252,6 +285,16 @@ export const WeatherConditionCard = forwardRef<
               tone="wind"
             >
               {formatNumeric(windNum)}
+            </MetricBadge>
+          )}
+          {usAqi != null && usAqi > 50 && (
+            <MetricBadge
+              icon="solid:smog"
+              tone="aqi"
+              usAqi={usAqi}
+              ariaLabel={`US AQI ${formatNumeric(usAqi)}, ${getAqiCategory(usAqi)}`}
+            >
+              {formatNumeric(usAqi)}
             </MetricBadge>
           )}
         </div>

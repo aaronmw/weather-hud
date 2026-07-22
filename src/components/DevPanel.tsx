@@ -19,6 +19,8 @@ type DevPanelProps = {
   onWindSpeedOffsetChange: (delta: number) => void
   popOffset: number
   onPopOffsetChange: (delta: number) => void
+  aqiOffset: number
+  onAqiOffsetChange: (delta: number) => void
   textShadow: string
   onTextShadowChange: (textShadow: string) => void
 }
@@ -36,6 +38,8 @@ export function DevPanel({
   onWindSpeedOffsetChange,
   popOffset,
   onPopOffsetChange,
+  aqiOffset,
+  onAqiOffsetChange,
   textShadow,
   onTextShadowChange,
 }: DevPanelProps) {
@@ -210,7 +214,7 @@ export function DevPanel({
               spellCheck={false}
               autoCapitalize="off"
               autoCorrect="off"
-              className="border-foreground/30 bg-background text-foreground focus:border-foreground/70 h-9 w-full rounded border px-2 font-mono text-xs outline-none transition-colors"
+              className="border-foreground/30 bg-background text-foreground focus:border-foreground/70 h-9 w-full rounded border px-2 font-mono text-xs transition-colors outline-none"
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -232,6 +236,30 @@ export function DevPanel({
                 onClick={() => onPopOffsetChange(10)}
                 className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-semibold transition-colors"
                 aria-label={`Increase hour ${selectedHour} POP by 10%`}
+              >
+                +
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <span className="text-sm opacity-80">AQI offset</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onAqiOffsetChange(-10)}
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-semibold transition-colors"
+                aria-label={`Decrease hour ${selectedHour} AQI by 10`}
+              >
+                −
+              </button>
+              <span className="text-sm tabular-nums">
+                {aqiOffset > 0 ? `+${aqiOffset}` : aqiOffset}
+              </span>
+              <button
+                type="button"
+                onClick={() => onAqiOffsetChange(10)}
+                className="border-foreground/30 hover:bg-foreground/10 flex h-8 w-8 shrink-0 items-center justify-center rounded border text-sm font-semibold transition-colors"
+                aria-label={`Increase hour ${selectedHour} AQI by 10`}
               >
                 +
               </button>

@@ -26,6 +26,7 @@ import {
   NUM_FORECASTED_HOURS,
 } from '@/lib/config'
 import type { HourlyForecast } from '@/lib/ec-weather'
+import { getConditionPresentation } from '@/lib/condition-icons'
 import { formatNumeric } from '@/lib/format'
 import { getSunTimes } from '@/lib/sun'
 import { twJoin } from 'tailwind-merge'
@@ -58,43 +59,15 @@ const CLOUD_DRIFT_SPRITES = [
   },
 ]
 
-const LIGHTNING_SCENE_CONDITION_CODES = [
-  '09',
-  '19',
-  '39',
-  '40',
-  '41',
-  '42',
-  '43',
-  '44',
-  '45',
-  '46',
-  '47',
-]
-
 interface ColumnSceneRun {
   layer: SceneLayerDefinition
   startIndex: number
   endIndex: number
 }
 
-type ConditionSceneMatch = 'all' | string[] | ConditionSceneMatchOptions
-type ConditionSceneTime = 'day' | 'night' | 'both'
-
-interface ConditionSceneMatchOptions {
-  include?: string[]
-  exclude?: string[]
-}
-
 interface SceneLayerDefinition {
   id: string
   renderElement: (animated: boolean) => ReactElement
-}
-
-interface ConditionSceneRule {
-  conditions: ConditionSceneMatch
-  dayOrNight: ConditionSceneTime
-  layers: SceneLayerDefinition[]
 }
 
 function TiledSceneLayer({ src }: { src: string }) {
@@ -335,139 +308,28 @@ const SCENE_LAYERS = {
   },
 } satisfies Record<string, SceneLayerDefinition>
 
-const CLEAR_SCENE_CONDITION_CODES = ['00', '31']
-const SUN_AND_CLOUD_SCENE_CONDITION_CODES = ['01', '02', '03', '04', '05']
-
-const CLOUD_SCENE_CONDITION_CODES = [
-  '01',
-  '02',
-  '03',
-  '04',
-  '05',
-  '06',
-  '07',
-  '08',
-  '09',
-  '10',
-  '11',
-  '12',
-  '13',
-  '14',
-  '19',
-  '20',
-  '21',
-  '22',
-  '23',
-  '24',
-  '25',
-  '26',
-  '27',
-  '28',
-  '29',
-  '32',
-  '33',
-  '34',
-  '35',
-  '36',
-  '37',
-  '38',
-  '39',
-  '40',
-  '41',
-  '42',
-  '43',
-  '47',
+const ORDERED_SCENE_LAYERS = [
+  SCENE_LAYERS.night,
+  SCENE_LAYERS.day,
+  SCENE_LAYERS.lensFlare,
+  SCENE_LAYERS.dayCloudy,
+  SCENE_LAYERS.clouds,
+  SCENE_LAYERS.skyStormy,
+  SCENE_LAYERS.rain,
+  SCENE_LAYERS.lightning,
 ]
-const DAY_CLOUDY_SCENE_CONDITION_CODES = CLOUD_SCENE_CONDITION_CODES.filter(
-  (iconCode) => !SUN_AND_CLOUD_SCENE_CONDITION_CODES.includes(iconCode),
-)
-
-const CONDITION_SCENES: ConditionSceneRule[] = [
-  {
-    conditions: 'all',
-    dayOrNight: 'night',
-    layers: [SCENE_LAYERS.night],
-  },
-  {
-    conditions: { exclude: DAY_CLOUDY_SCENE_CONDITION_CODES },
-    dayOrNight: 'day',
-    layers: [SCENE_LAYERS.day],
-  },
-  {
-    conditions: CLEAR_SCENE_CONDITION_CODES,
-    dayOrNight: 'day',
-    layers: [SCENE_LAYERS.lensFlare],
-  },
-  {
-    conditions: DAY_CLOUDY_SCENE_CONDITION_CODES,
-    dayOrNight: 'day',
-    layers: [SCENE_LAYERS.dayCloudy],
-  },
-  {
-    conditions: CLOUD_SCENE_CONDITION_CODES,
-    dayOrNight: 'both',
-    layers: [SCENE_LAYERS.clouds],
-  },
-  {
-    conditions: LIGHTNING_SCENE_CONDITION_CODES,
-    dayOrNight: 'both',
-    layers: [SCENE_LAYERS.skyStormy],
-  },
-  {
-    conditions: [
-      '06',
-      '07',
-      '09',
-      '12',
-      '13',
-      '14',
-      '15',
-      '19',
-      '26',
-      '27',
-      '28',
-      '29',
-      '39',
-      '40',
-      '41',
-      '42',
-      '43',
-      '44',
-      '45',
-      '46',
-      '47',
-    ],
-    dayOrNight: 'both',
-    layers: [SCENE_LAYERS.rain],
-  },
-  {
-    conditions: LIGHTNING_SCENE_CONDITION_CODES,
-    dayOrNight: 'both',
-    layers: [SCENE_LAYERS.lightning],
-  },
-]
-
-const ORDERED_SCENE_LAYERS = CONDITION_SCENES.reduce<SceneLayerDefinition[]>(
-  (layers, rule) => {
-    for (const layer of rule.layers) {
-      if (!layers.some((candidate) => candidate.id === layer.id)) {
-        layers.push(layer)
-      }
-    }
-    return layers
-  },
-  [],
-)
 
 interface LabelDatum {
   key: number
   time: string
   temp: number
+  condition: string
   iconCode: string
   pop: string | null
   popNum: number | null
   windNum: number
   windDirection: number | null
+  usAqi: number | null
   isToday: boolean
   isPrimaryColumn: boolean
   isDaylight: boolean
@@ -485,7 +347,9 @@ interface TemperatureCurveChartProps {
   windSpeed?: number
   windGust?: number
   windDirection?: number | null
-  todayPop?: number | null
+  currentPop?: number | null
+  currentCondition?: string
+  currentUsAqi?: number | null
   iconCode?: string
   currentDateMs: number
 }
@@ -521,38 +385,24 @@ function isDaylightAt(date: Date): boolean {
   return time >= sunrise.getTime() && time < sunset.getTime()
 }
 
-function sceneRuleMatchesTime(
-  ruleTime: ConditionSceneTime,
-  isDaylight: boolean,
-): boolean {
-  return (
-    ruleTime === 'both' ||
-    (ruleTime === 'day' && isDaylight) ||
-    (ruleTime === 'night' && !isDaylight)
-  )
-}
-
-function sceneRuleMatchesCondition(
-  ruleConditions: ConditionSceneMatch,
-  iconCode: string,
-): boolean {
-  if (ruleConditions === 'all') return true
-  if (Array.isArray(ruleConditions)) return ruleConditions.includes(iconCode)
-  return (
-    (ruleConditions.include == null ||
-      ruleConditions.include.includes(iconCode)) &&
-    (ruleConditions.exclude == null ||
-      !ruleConditions.exclude.includes(iconCode))
-  )
-}
-
 function getColumnSceneLayers(label: LabelDatum): SceneLayerDefinition[] {
-  return CONDITION_SCENES.flatMap((rule) =>
-    sceneRuleMatchesTime(rule.dayOrNight, label.isDaylight) &&
-    sceneRuleMatchesCondition(rule.conditions, label.iconCode)
-      ? rule.layers
-      : [],
-  )
+  const condition = getConditionPresentation(label.iconCode, label.condition)
+  const layers: SceneLayerDefinition[] = []
+
+  if (label.isDaylight) {
+    layers.push(
+      condition.usesDayCloudySky ? SCENE_LAYERS.dayCloudy : SCENE_LAYERS.day,
+    )
+    if (condition.showsLensFlare) layers.push(SCENE_LAYERS.lensFlare)
+  } else {
+    layers.push(SCENE_LAYERS.night)
+  }
+  if (condition.hasClouds) layers.push(SCENE_LAYERS.clouds)
+  if (condition.showsStormSky) layers.push(SCENE_LAYERS.skyStormy)
+  if (condition.showsRain) layers.push(SCENE_LAYERS.rain)
+  if (condition.showsLightning) layers.push(SCENE_LAYERS.lightning)
+
+  return layers
 }
 
 function getColumnSceneRuns(labelData: LabelDatum[]): ColumnSceneRun[] {
@@ -650,7 +500,9 @@ export function TemperatureCurveChart({
   windSpeed = 0,
   windGust = 0,
   windDirection = null,
-  todayPop = null,
+  currentPop = null,
+  currentCondition = '',
+  currentUsAqi = null,
   iconCode: currentIconCode,
   currentDateMs,
 }: TemperatureCurveChartProps) {
@@ -660,7 +512,7 @@ export function TemperatureCurveChart({
   )
   const numHours = temps.length
 
-  const nowPop = todayPop ?? null
+  const nowPop = currentPop ?? null
   const nowWind = Math.max(windSpeed, windGust)
   const nowWindFmt = formatWind(nowWind, windDirection ?? null)
   const currentDate = useMemo(() => new Date(currentDateMs), [currentDateMs])
@@ -670,11 +522,13 @@ export function TemperatureCurveChart({
         key: 0,
         time: 'NOW',
         temp: currentTemp,
+        condition: currentCondition,
         iconCode: currentIconCode ?? hourlyForecast[0]?.iconCode ?? '00',
         pop: nowPop != null ? `${formatNumeric(nowPop)}%` : null,
         popNum: nowPop,
         windNum: nowWindFmt.windNum,
         windDirection: nowWindFmt.windDirection,
+        usAqi: currentUsAqi,
         isToday: true,
         isPrimaryColumn: true,
         isDaylight: isDaylightAt(currentDate),
@@ -693,11 +547,13 @@ export function TemperatureCurveChart({
           key: i + 1,
           time: formatTime(h.utc),
           temp: h.temp,
+          condition: h.condition,
           iconCode: h.iconCode,
           pop: h.pop != null ? `${formatNumeric(h.pop)}%` : null,
           popNum: h.pop,
           windNum: windFmt.windNum,
           windDirection: windFmt.windDirection,
+          usAqi: h.usAqi,
           isToday: false,
           isPrimaryColumn: false,
           isDaylight: isDaylightAt(
@@ -729,7 +585,9 @@ export function TemperatureCurveChart({
   }, [
     currentTemp,
     currentIconCode,
+    currentCondition,
     currentDate,
+    currentUsAqi,
     hourlyForecast,
     nowPop,
     nowWindFmt.windDirection,
@@ -851,11 +709,13 @@ export function TemperatureCurveChart({
             : undefined
         }
         temp={label.temp}
+        condition={label.condition}
         iconCode={label.iconCode}
         pop={label.pop}
         popNum={label.popNum}
         windNum={label.windNum}
         windDirection={label.windDirection}
+        usAqi={label.usAqi}
         isDaylight={label.isDaylight}
         isPrimaryColumn={label.isPrimaryColumn}
         showTemp={label.showTemp}
