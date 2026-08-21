@@ -5,7 +5,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 First, run the development server:
 
 ```bash
-npm run dev
+pnpm dev
 # or
 yarn dev
 # or
@@ -14,7 +14,9 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [https://weather-hud.localhost](https://weather-hud.localhost) with your
+browser. The dotfiles-managed router proxies it to strict upstream
+`127.0.0.1:3035`.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
@@ -34,20 +36,20 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 This project is set up for local Netlify deploys. Run these once if the repo is not linked to the Netlify site yet:
 
 ```bash
-npx --yes netlify-cli@26.1.0 login
-npx --yes netlify-cli@26.1.0 link
+pnpm dlx netlify-cli@26.1.0 login
+pnpm dlx netlify-cli@26.1.0 link
 ```
 
 Then deploy from this machine:
 
 ```bash
-npm run deploy:prod
+pnpm deploy:prod
 ```
 
-`deploy:prod` runs a local Netlify build, then publishes the production deploy. If you have already run `npm run netlify:build` and only want to upload that existing output, use:
+`deploy:prod` runs a local Netlify build, then publishes the production deploy. If you have already run `pnpm netlify:build` and only want to upload that existing output, use:
 
 ```bash
-npm run deploy:prod:no-build
+pnpm deploy:prod:no-build
 ```
 
-For a draft deploy, run `npm run deploy:preview`.
+For a draft deploy, run `pnpm deploy:preview`.

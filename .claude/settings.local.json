@@ -7,9 +7,9 @@
       "WebFetch(domain:dd.weather.gc.ca)",
       "WebFetch(domain:eccc-msc.github.io)",
       "Bash(node -e:*)",
-      "Bash(npm run lint:*)",
-      "Bash(npm run build:*)",
-      "Bash(npx tsx:*)"
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm dlx tsx:*)"
     ]
   }
 }

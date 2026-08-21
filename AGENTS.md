@@ -8,9 +8,9 @@ Weather HUD is a full-screen, ambient weather display for Canmore, Alberta. It r
 
 ## Commands
 
-- `npm run dev` — start dev server (uses `--webpack` flag, not Turbopack)
-- `npm run build` — production build
-- `npm run lint` — ESLint 9 flat config
+- `pnpm dev` — start dev server (uses `--webpack` flag, not Turbopack)
+- `pnpm build` — production build
+- `pnpm lint` — ESLint 9 flat config
 - No test framework is configured
 
 ## Tech Stack
